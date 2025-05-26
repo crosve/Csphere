@@ -20,16 +20,19 @@ export default function Home() {
           </section>
 
           <section className="flex flex-col md:flex-row justify-center gap-6 w-[300px] md:w-[400px] lg:w-[500px]">
-            <button className="bg-white text-gray-900 text-xl font-medium px-6 py-3 rounded-lg w-full text-center hover:bg-gray-100 transition duration-300 flex items-center justify-center">
-              Explore Solutions
+            <button className="bg-white text-gray-900 text-sm font-medium px-6 py-3 rounded-lg w-full text-center hover:bg-gray-100 transition duration-300 flex items-center justify-center">
+              Download Chrome Extension
             </button>
-            <button className="text-white text-xl font-medium px-6 py-3 w-full text-center hover:text-gray-200 transition duration-300 bg-[#202A29] rounded-lg flex items-center justify-center">
-              View a Demo
-            </button>
+            <a
+              href="#feature-section"
+              className="text-white text-sm font-medium px-6 py-3 w-full text-center hover:text-gray-200 transition duration-300 bg-[#202A29] rounded-lg flex items-center justify-center"
+            >
+              View Demo
+            </a>
           </section>
         </div>
       </main>
-      <section className="w-full  h-[800px]">
+      <section id="feature-section" className="w-full  h-[800px]">
         <FeatureSection />
       </section>
     </div>

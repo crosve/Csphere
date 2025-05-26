@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "My Chrome Extension",
+  "name": "Csphere Tab Saver",
   "version": "1.0",
   "description": "Google chrome extension that works alongside our app to bookmark their tabs.",
   "permissions": ["tabs", "cookies", "identity", "identity.email"],

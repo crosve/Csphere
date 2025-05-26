@@ -166,7 +166,6 @@ export default function SignupForm() {
           Submit
         </Button>
       </form>
-
       <hr />
       <div className="text-center text-gray-400 mt-4">
         <p className="text-sm">Have an account?</p>
@@ -176,6 +175,7 @@ export default function SignupForm() {
           </Button>
         </Link>
       </div>
+      toast.success("Signup successful!");
     </Form>
   );
 }

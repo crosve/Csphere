@@ -2,6 +2,11 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+html {
+  scroll-behavior: smooth;
+
+}
+
 @theme {
   --font-ptserif: "PT+Serif";
 }

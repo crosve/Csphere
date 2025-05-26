@@ -44,18 +44,6 @@ function LogoComponent() {
               href="#"
               className="text-base font-medium text-[#202A29] hover:text-gray-700"
             >
-              Solutions
-            </a>
-            <a
-              href="#"
-              className="text-base font-medium text-[#202A29] hover:text-gray-700"
-            >
-              Industries
-            </a>
-            <a
-              href="#"
-              className="text-base font-medium text-[#202A29] hover:text-gray-700"
-            >
               About us
             </a>
           </>

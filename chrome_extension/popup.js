@@ -9,21 +9,28 @@ chrome.identity.getProfileUserInfo({ accountStatus: "ANY" }, (userInfo) => {
   userEmail = userInfo.email;
 });
 
-// Check if the script is running in the correct context
+function insertMessage(message, messageType) {
+  const parent = document.querySelector("app");
+  const message_p = document.querySelector(".message-p");
+  const submit_button = document.querySelector(".action-bar");
+  const loading_div = document.createElement("div");
 
-// Helper function to wrap chrome.cookies.get in a Promise
-// function getCookieAsync(details) {
-//   return new Promise((resolve, reject) => {
-//     chrome.cookies.get(details, (cookie) => {
-//       // Check for chrome.runtime.lastError, which indicates problems
-//       // like missing host permissions.
-//       if (chrome.runtime.lastError) {
-//         return reject(chrome.runtime.lastError);
-//       }
-//       resolve(cookie); // Resolve with the cookie object (which might be null)
-//     });
-//   });
-// }
+  submit_button.disabled = true;
+  loading_div.className = "loading-icon";
+  if (!message_p) return;
+
+  message_p.textContent = message;
+  message_p.style.color = messageType === "error" ? "red" : "green";
+
+  parent.appendChild(loading_div);
+
+  setTimeout(() => {
+    message_p.textContent = "";
+    message_p.style.color = "";
+    submit_button.disabled = false;
+    loading_div.remove();
+  }, 5000);
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById("bookMarkBtn");
@@ -73,13 +80,14 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           const data = await response.json();
           console.log("Response data from server: ", data);
-          alert("Bookmark saved successfully!");
+
+          insertMessage("Bookmark succesfullysaved");
         } else {
           console.warn("Token cookie not found or has no value.");
           alert("Could not find authentication token. Please log in.");
         }
       } catch (error) {
-        console.error("An error occurred:", error);
+        insertMessage("An error occured, please try again later");
         // Display a user-friendly error message if needed
         alert(`An error occurred: ${error.message}`);
       }

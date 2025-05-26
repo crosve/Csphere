@@ -32,7 +32,7 @@ body {
 #app {
   display: flex;
   flex-direction: column;
-  height: 200px;
+  height: 250px;
   padding: 16px;
 }
 
@@ -273,4 +273,30 @@ h1 {
 
 .notes-textarea:focus {
   outline: none;
+}
+
+
+.message-p {
+  height: 50px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  justify-items: center;
+}
+
+.loading-icon {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(237, 230, 230, 0.704); /* Light background ring */
+  border-top: 4px solid rgb(166, 146, 146); /* Top colored part */
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: auto; /* center it */
+  display: none;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
