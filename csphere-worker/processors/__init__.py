@@ -1,8 +1,8 @@
 from .content import ContentProcessor
 
 PROCESSOR_MAP ={
-    'process_message': ContentProcessor
-    
+    'process_message': ContentProcessor()
+
 }
 
 

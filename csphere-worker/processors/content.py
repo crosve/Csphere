@@ -17,17 +17,17 @@ logger = logging.getLogger(__name__)
 class ContentProcessor(BaseProcessor):
 
 
-    def __init__():
-        super(BaseProcessor)
+    def __init__(self):
+        super().__init__()
 
 
     def process(self, message: dict):
 
-        user_id, notes, folder_id, content_data = BaseProcessor.extract_data(message)
+        user_id, notes, folder_id, content_data = self.extract_data(message=message)
 
         content_url = content_data.get('url')
 
-        if BaseProcessor.handle_if_exists(content_url, user_id, notes, folder_id):
+        if self.handle_if_exists(content_url, user_id, notes, folder_id):
             logger.info('Content existed and was saved appropiatly')
             return 
         

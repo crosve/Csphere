@@ -12,15 +12,15 @@ logger = logging.getLogger(__name__)
 class BaseProcessor(ABC):
 
     def __init__(self):
-        self.db = get_db()
+        self.db = self.get_db()
     @abstractmethod
-    def process(self, payload: dict):
+    def process(self, message: dict):
         """Standard method all processors must implement."""
         pass
 
 
     @staticmethod
-    def get_db(self):
+    def get_db():
         '''
         Method to get the database instant 
         
