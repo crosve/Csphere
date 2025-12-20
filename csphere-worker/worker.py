@@ -38,6 +38,8 @@ load_dotenv()
 
 def handle_message(message):
 
+    #
+
 
     db_gen = get_db()
     db = next(db_gen)
