@@ -5,6 +5,11 @@ from pydantic import BaseModel, EmailStr
 from datetime import datetime
 import uuid
 
+from sqlalchemy.orm import Mapped, mapped_column
+
+from sqlalchemy.dialects.postgresql import ARRAY
+
+
 
 class Folder(Base):
     __tablename__ = "folder"
@@ -13,5 +18,9 @@ class Folder(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id",  ondelete="CASCADE"), nullable=False)
     parent_id = Column(UUID(as_uuid=True), ForeignKey("folder.folder_id",  ondelete="CASCADE"), nullable=False)
     folder_name = Column(String, nullable=False)
+    keywords : Mapped[list[str]] = mapped_column(ARRAY(String))
+    url_patterns : Mapped[list[str]] = mapped_column(ARRAY(String))
     created_at = Column(TIMESTAMP, server_default="NOW()")
+
+
 

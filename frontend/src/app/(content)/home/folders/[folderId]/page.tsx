@@ -1,16 +1,7 @@
 "use client";
-import React, { useEffect, useState, use } from "react";
+import { useEffect, useState, use } from "react";
 import FolderIdLayout from "./FolderIdLayout";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
 import {
   Dialog,
   DialogContent,
@@ -58,6 +49,10 @@ function FolderSettingsDialog({
   const [newKeyword, setNewKeyword] = useState("");
   const [newPattern, setNewPattern] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
+
+  useEffect(() => {
+    setMetadata(initialMetadata);
+  }, [initialMetadata]);
 
   const addKeyword = () => {
     if (
@@ -138,6 +133,7 @@ function FolderSettingsDialog({
               </Label>
               <Input
                 id="folder-name"
+                disabled
                 value={metadata.name}
                 onChange={(e) =>
                   setMetadata({ ...metadata, name: e.target.value })
@@ -323,7 +319,7 @@ function FolderSettingsDialog({
             <div className="flex gap-3 pt-4 border-t border-gray-200">
               <Button
                 onClick={handleSave}
-                className="flex-1 bg-gray-900 hover:bg-gray-800"
+                className="flex-1 bg-gray-600 hover:bg-gray-500 text-white"
               >
                 Save Changes
               </Button>
