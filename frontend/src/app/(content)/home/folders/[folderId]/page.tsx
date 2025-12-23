@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Filter, ChevronDown, Sparkles, X } from "lucide-react";
+import { Plus, ChevronDown, Sparkles, X } from "lucide-react";
 import { fetchToken } from "@/functions/user/UserData";
 import BookmarkList from "@/components/BookmarkList";
 import { Breadcrumb } from "../foldercomponents/Breadcrumb";
@@ -18,9 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import SettingsIcon from "@/components/ui/settings";
 import { CiSettings } from "react-icons/ci";
-import { DropdownMenuArrow } from "@radix-ui/react-dropdown-menu";
 
 interface PathProps {
   id: string;
@@ -49,9 +47,12 @@ function FolderSettingsDialog({
   const [newKeyword, setNewKeyword] = useState("");
   const [newPattern, setNewPattern] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
+  console.log("Current UI State:", metadata);
 
   useEffect(() => {
+    console.log("metadata being set: ", initialMetadata);
     setMetadata(initialMetadata);
+    console.log("new data has been set");
   }, [initialMetadata]);
 
   const addKeyword = () => {
@@ -129,7 +130,7 @@ function FolderSettingsDialog({
                 htmlFor="folder-name"
                 className="text-sm font-medium text-gray-700"
               >
-                Folder Name
+                Folder Name, <h1>{metadata.name}</h1>
               </Label>
               <Input
                 id="folder-name"
@@ -406,44 +407,42 @@ export default function Page({
     }
   }, [folderId]);
 
-  // TODO: Fetch folder metadata from your API
   useEffect(() => {
     const fetchFolderMetadata = async (id: string) => {
       // Implement your API call here
-      // const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/folder-metadata/${id}`;
-      // const token = fetchToken();
-      // const response = await fetch(API_URL, { ... });
-      // const data = await response.json();
-      // setFolderMetadata(data);
+      const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/folder/metadata/${id}`;
+      const token = fetchToken();
+      const response = await fetch(API_URL, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      console.log("Data returned: ", data);
+      setFolderMetadata(data.data);
     };
 
     if (folderId) {
-      // fetchFolderMetadata(folderId);
-      // For now, using mock data
-      setFolderMetadata({
-        name: paths[paths.length - 1]?.name || "",
-        keywords: [],
-        urlPatterns: [],
-        smartBucketingEnabled: false,
-      });
+      fetchFolderMetadata(folderId);
     }
   }, [folderId, paths]);
 
   const handleSaveMetadata = async (metadata: FolderMetadata) => {
     // TODO: Save to your API
-    // const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/folder-metadata/${folderId}`;
-    // const token = fetchToken();
-    // await fetch(API_URL, {
-    //   method: 'PUT',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     Authorization: `Bearer ${token}`,
-    //   },
-    //   body: JSON.stringify(metadata),
-    // });
+    const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/folder/${folderId}`;
+    const token = fetchToken();
+    await fetch(API_URL, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(metadata),
+    });
 
     setFolderMetadata(metadata);
-    console.log("Saved metadata:", metadata);
   };
 
   return (

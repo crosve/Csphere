@@ -209,6 +209,8 @@ def get_unread_count(user_id: UUID = Depends(get_current_user_id), db: Session =
         return {'status' : 'unsuccesfull', 'error' : str(e)}
 
 
+
+
 @router.get("/content/unread", response_model=UserSavedContentResponse)
 def get_unread_content(cursor: str = None, user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
     print("in here")

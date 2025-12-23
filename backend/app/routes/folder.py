@@ -10,8 +10,10 @@ from app.data_models.content import Content
 from app.data_models.content_item import ContentItem
 from app.data_models.content_ai import ContentAI
 
+from app.services.folder import update_folder_metadata
+
 from app.db.database import get_db
-from app.schemas.folder import  FolderDetails, FolderItem
+from app.schemas.folder import  FolderDetails, FolderItem, FolderMetadata, FolderNotFound
 
 from app.utils.hashing import get_current_user_id
 from datetime import datetime
@@ -71,6 +73,58 @@ def get_folder_path(folder_id: UUID, user_id: UUID=Depends(get_current_user_id),
             break
         current = db.query(Folder).filter(Folder.folder_id == current.parent_id, Folder.user_id == user_id).first()
     return {"path": path}
+
+
+@router.get('/folder/metadata/{folder_id}')
+def get_folder_metadata(folder_id : str, db: Session = Depends(get_db)):
+
+    try:
+        folder : Folder = db.query(Folder).filter(Folder.folder_id ==folder_id ).first()
+        if not folder:
+            return {'success' : False, 'message' : 'No folder found for this folder id '}
+        
+        payload = {
+            "name" : folder.folder_name if not None else '', 
+            "keywords" : folder.keywords if not None else [],
+            "urlPatterns" : folder.url_patterns if not None else [], 
+            "smartBucketingEnabled" : folder.bucketing_mode if not None else False
+        }
+
+        return {'success'  : True, 'message': 'Data fetched successfully', 'data' : payload }
+
+
+    except Exception as e:
+        logging.error(f"Error occured trying to fet folder metadata: {e} ")
+
+
+from sqlalchemy.exc import SQLAlchemyError
+
+
+@router.put("/folder/{folder_id}")
+def process_folder_metadata(
+    folder_id: UUID,
+    metadata: FolderMetadata,
+    user_id: UUID = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    try:
+        folder = update_folder_metadata(
+            db=db,
+            folder_id=folder_id,
+            user_id=user_id,
+            metadata=metadata,
+        )
+        return {"success": True, "folder_id": folder.folder_id}
+
+    except FolderNotFound:
+        raise HTTPException(status_code=404, detail="Folder not found")
+    
+
+
+
+
+    
+
 
 
 

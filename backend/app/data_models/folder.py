@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, TIMESTAMP, ForeignKey
+from sqlalchemy import Column, String, TIMESTAMP, ForeignKey, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from app.db.database import Base
 from pydantic import BaseModel, EmailStr
@@ -18,6 +18,7 @@ class Folder(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id",  ondelete="CASCADE"), nullable=False)
     parent_id = Column(UUID(as_uuid=True), ForeignKey("folder.folder_id",  ondelete="CASCADE"), nullable=False)
     folder_name = Column(String, nullable=False)
+    bucketing_mode : Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     keywords : Mapped[list[str]] = mapped_column(ARRAY(String))
     url_patterns : Mapped[list[str]] = mapped_column(ARRAY(String))
     created_at = Column(TIMESTAMP, server_default="NOW()")
