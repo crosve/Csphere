@@ -166,18 +166,16 @@ def save_content_by_url(content: ContentSavedByUrl, user_id: UUID = Depends(get_
         if existing_content:
             return {"status": "unsuccessful", "message": "Content already exists"}
         
-        response = requests.get(url=safe_url, timeout=10)
+        # response = requests.get(url=safe_url, timeout=10)
 
-        if response.status_code != 200:
-            raise HTTPException(status_code=response.status_code, detail="Failed to fetch content")
+        # if response.status_code != 200:
+        #     raise HTTPException(status_code=response.status_code, detail="Failed to fetch content")
 
-        html = response.text
-        meta = ContentPreprocessor().extract(html)
+        html = ''
 
-        title = meta["title"] or None
+        title =safe_url
 
-        if not html.strip():
-            raise HTTPException(status_code=400, detail="Fetched page is empty")
+    
 
         _enqueue_new_content(
             url=safe_url,
@@ -209,6 +207,8 @@ def get_unread_count(user_id: UUID = Depends(get_current_user_id), db: Session =
     except Exception as e:
         logger.error(f"Error occured in count api router: {e}")
         return {'status' : 'unsuccesfull', 'error' : str(e)}
+
+
 
 
 @router.get("/content/unread", response_model=UserSavedContentResponse)

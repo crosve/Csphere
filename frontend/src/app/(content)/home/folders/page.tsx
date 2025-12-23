@@ -1,7 +1,7 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import FolderLayout from "./FolderLayout";
-import { Plus, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import FolderCard from "./foldercomponents/FolderCard";
 import { createFolder } from "./functions/foldercreate";
 import { toast } from "sonner";
@@ -31,7 +31,7 @@ interface ResponseModel {
 const sortOptions = ["Latest", "Oldest", "Name A-Z", "Name Z-A"];
 
 function page() {
-  const[open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false);
   const [sortBy, setSortBy] = useState("Latest");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [folderName, setFolderName] = useState("");
@@ -200,8 +200,10 @@ function page() {
                   className="border border-black focus:border-gray-300 focus:outline-none text-black px-3 py-2 rounded-md"
                 />
                 <div className="flex items-end w-full justify-end space-x-3 text-black">
-                  <button className="rounded-lg hover:bg-amber-50 px-3 py-1.5 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
-                  onClick={()=>setOpen(!open)}>
+                  <button
+                    className="rounded-lg hover:bg-amber-50 px-3 py-1.5 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                    onClick={() => setOpen(!open)}
+                  >
                     Cancel
                   </button>
                   <button

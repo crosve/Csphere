@@ -17,7 +17,6 @@ type Bookmark = {
 
 export default function BookmarkList({ items }: { items: Bookmark[] }) {
   const viewMode = useContext(LayoutContext);
-  console.log("current conext value: ", viewMode);
   if (items.length === 0) {
     return <p className="text-center text-gray-500">No bookmarks found</p>;
   }
