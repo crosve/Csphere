@@ -140,10 +140,16 @@ def handle_message(message):
 
 
 def poll_and_process():
-    ACTIVEMQ_URL=os.getenv('ACTIVEMQ_URL')
-    ACTIVEMQ_QUEUE= os.getenv('ACTIVEMQ_QUEUE')
-    ACTIVEMQ_USER= os.getenv('ACTIVEMQ_USER')
-    ACTIVEMQ_PASS= os.getenv('ACTIVEMQ_PASS')
+    # ACTIVEMQ_URL=os.getenv('ACTIVEMQ_URL')
+    # ACTIVEMQ_QUEUE= os.getenv('ACTIVEMQ_QUEUE')
+    # ACTIVEMQ_USER= os.getenv('ACTIVEMQ_USER')
+    # ACTIVEMQ_PASS= os.getenv('ACTIVEMQ_PASS')
+
+    ACTIVEMQ_URL='http://feeltiptop.com:8161/' 
+    ACTIVEMQ_QUEUE='CSPHEREQUEUETEST' 
+    ACTIVEMQ_USER='admin'
+    ACTIVEMQ_PASS='tiptop'
+
 
     queue_url = f"{ACTIVEMQ_URL}/api/message/{ACTIVEMQ_QUEUE}?type=queue&oneShot=true"
 
