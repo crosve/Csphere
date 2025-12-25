@@ -13,7 +13,8 @@ from app.data_models.content_ai import ContentAI
 from app.services.folder import update_folder_metadata
 
 from app.db.database import get_db
-from app.schemas.folder import  FolderDetails, FolderItem, FolderMetadata, FolderNotFound
+from app.schemas.folder import  FolderDetails, FolderItem, FolderMetadata
+from app.exceptions.folder import FolderNotFound
 
 from app.utils.hashing import get_current_user_id
 from datetime import datetime

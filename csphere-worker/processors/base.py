@@ -4,8 +4,9 @@ from database import get_db
 import logging
 from data_models.content import Content
 from utils.utils import handle_existing_content
+from classes.EmbeddingManager import ContentEmbeddingManager
 
-
+import requests
 logger = logging.getLogger(__name__)
 
 
@@ -13,6 +14,9 @@ class BaseProcessor(ABC):
 
     def __init__(self):
         self.db = self.get_db()
+        self.embedding_manager = ContentEmbeddingManager()
+
+
     @abstractmethod
     def process(self, message: dict):
         """Standard method all processors must implement."""
@@ -30,6 +34,25 @@ class BaseProcessor(ABC):
         db = next(db_gen)
         return db 
     
+
+    @staticmethod
+    def get_html_content(self, url: str) -> str:
+        try:
+            response = requests.get(url)
+            if response.status_code == 200:
+                # Get the HTML content as a string
+                html_content = response.text
+                return html_content
+                
+            else:
+                logging.error(f"Failed to retrieve the page. Status code: {response.status_code}")
+
+        except requests.exceptions.RequestException as e:
+            logging.error(f"An error occurred: {e}")
+
+
+        except Exception as e:
+            logging.error(f"Error fetching the html content: {e}")
 
     def extract_data(self, message:dict):
         '''

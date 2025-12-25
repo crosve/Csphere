@@ -8,7 +8,6 @@ from classes.EmbeddingManager import ContentEmbeddingManager
 from data_models.folder_item import folder_item
 
 from uuid import uuid4
-import time
 
 
 logger = logging.getLogger(__name__)

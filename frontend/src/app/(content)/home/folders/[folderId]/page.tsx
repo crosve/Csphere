@@ -130,7 +130,7 @@ function FolderSettingsDialog({
                 htmlFor="folder-name"
                 className="text-sm font-medium text-gray-700"
               >
-                Folder Name, <h1>{metadata.name}</h1>
+                Folder Name
               </Label>
               <Input
                 id="folder-name"

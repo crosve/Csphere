@@ -45,6 +45,9 @@ def handle_message(message):
     messageProcessor = get_processor('process_message')
     messageProcessor.process(message=message)
 
+    bucketProcessor = get_processor('process_folder')
+    bucketProcessor.process(message=message)
+
 
     # db_gen = get_db()
     # db = next(db_gen)
