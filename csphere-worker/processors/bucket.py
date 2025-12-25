@@ -1,5 +1,6 @@
 import logging
 from uuid import uuid4
+import datetime
 
 # Standardized imports: Grouping by standard library, third-party, then local modules
 from .base import BaseProcessor
@@ -26,7 +27,7 @@ class BucketProcessor(BaseProcessor):
         super().__init__()
 
 
-    def process(self, message: dict) -> bool:
+    def process(self, message: dict, content_id : str) -> bool:
         """
         Process the message metadata to match with the current users folders.
         """
@@ -39,7 +40,7 @@ class BucketProcessor(BaseProcessor):
             return False
 
         try:
-            user_folder_data = self.get_user_folders(user_id=user_id)
+            user_folder_data : list[FolderBucketData] = self.get_user_folders(user_id=user_id)
 
             # html_content = self.get_html_content(content_data.url)
 
@@ -57,7 +58,7 @@ class BucketProcessor(BaseProcessor):
 
             if matched_folder_id:
                 logger.info(f"Content matched to folder: {matched_folder_id}")
-                self.assign_to_folder(content_data, matched_folder_id)
+                self.assign_to_folder(content_data, matched_folder_id, content_id, user_id)
             
             return True
     
@@ -137,5 +138,36 @@ class BucketProcessor(BaseProcessor):
             return scores[0][0]
         
         return None
+
+
+
+    def assign_to_folder(self, content_data : ContentPayload, matched_folder_id : str, content_id : str, user_id : str)  -> bool:
+        
+        db = self.db
+        present = db.query(folder_item).filter(content_id == folder_item.content_id, matched_folder_id == folder_item.folder_id, user_id == folder_item.user_id).first()
+
+        if present:
+          raise 
+
+        try:
+            new_item = folder_item(
+                folder_item_id = uuid4(), 
+                folder_id = matched_folder_id,
+                user_id = user_id, 
+                content_id = content_id,
+                added_at = datetime.utcnow()
+
+            )
+
+            db.add(new_item)
+            db.commit()
+            db.refresh(new_item)
+
+            return {'success' : True, 'message' : 'Bookmark added to folder'} 
+
+
+
+        except Exception as e:
+            logging.error(f"Error matching folder {e}" )
 
 

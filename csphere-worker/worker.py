@@ -6,23 +6,15 @@ from uuid import uuid4
 from email.utils import quote
 import time
 
-from datetime import datetime, timezone
 import logging
 
-from data_models.content import Content
-from data_models.content_item import ContentItem
-from data_models.folder_item import folder_item
-from data_models.content_ai import ContentAI
-from database import get_db
-
-
-from utils.utils import handle_existing_content
 
 from dotenv import load_dotenv
 
-from classes.EmbeddingManager import ContentEmbeddingManager
 
 from processors import get_processor
+from processors.bucket import BucketProcessor
+from processors.content import ContentProcessor
 
 #Logging config stuff
 logging.basicConfig(
@@ -41,110 +33,18 @@ load_dotenv()
 def handle_message(message):
 
     #
+    try:
+        messageProcessor : ContentProcessor = get_processor('process_message')
+        content_id : str = messageProcessor.process(message=message)
 
-    messageProcessor = get_processor('process_message')
-    messageProcessor.process(message=message)
+        if content_id != '':
+            bucketProcessor : BucketProcessor = get_processor('process_folder')
+            bucketProcessor.process(message=message, content_id=content_id)
 
-    bucketProcessor = get_processor('process_folder')
-    bucketProcessor.process(message=message)
-
-
-    # db_gen = get_db()
-    # db = next(db_gen)
-
-    # logger.info(f"The current message: {message}")
+    except Exception as e:
+        logging.error(f"Failed to fully process message: {e}")
 
 
-
- 
-    # #Create the Content object 
-    # user_id = message.get('user_id')
-    # notes = message.get('notes')
-    # folder_id = message.get('folder_id', '')
-    # content_data = message.get('content_payload', {})
-
-    # #filter based on the content paylaod 
-
-
-    # if content_data == {}:
-    #     logger.error("Content data is empty, returning")
-    #     return 
-    
-    # content_url = content_data.get('url')
-
-    # existing_content = db.query(Content).filter(Content.url == content_url).first()
-
-    # if existing_content:
-    #     #done some logic and don't continue on , end it here 
-
-    #     handle_existing_content(existing_content, user_id, db, notes, folder_id)
-    #     logger.info("Bookmark succesfully saved to user")
-    #     return 
-    
-
-    # new_content = Content(**content_data)
-    
-    # try:
-    #     db.add(new_content)
-    #     db.flush()
-
-    #     #update the content Embedding manager when necessary 
-    #     content_manager = ContentEmbeddingManager(db=db, content_url=new_content.url)
-
-    #     raw_html = message.get('raw_html', '')
-
-    #     if raw_html == '':
-    #         logging.info("No raw html provided, categorization and summarization may be poor")
-
-    #     content_ai = content_manager.process_content(new_content, raw_html)
-
-    #     db.commit()
-
-    #     if not content_ai:
-    #         logging.info("Embedding generation failed or skipped.")
-    #     else:
-    #         logging.debug(f"Summary Generated: {content_ai.ai_summary}")
-
-    #         # Check if this user already saved this content
-    #         existing_item = db.query(ContentItem).filter(
-    #             ContentItem.user_id == user_id,
-    #             ContentItem.content_id == new_content.content_id
-    #         ).first()
-
-
-    #         utc_time = datetime.now(timezone.utc)
-
-    #         if not existing_item:
-    #             new_item = ContentItem(
-    #                 user_id=user_id,
-    #                 content_id=new_content.content_id,
-    #                 saved_at=utc_time,
-    #                 notes=notes
-    #             )
-    #             db.add(new_item)
-    #             db.commit()
-
-
-    #             # Add to the corresponding folder if any
-    #             if folder_id and folder_id != '' and folder_id != 'default':
-    #                 new_folder_item = folder_item(
-    #                     folder_item_id=uuid4(),
-    #                     folder_id=folder_id,
-    #                     user_id=user_id,
-    #                     content_id=new_content.content_id,
-    #                     added_at=datetime.utcnow()
-    #                 )
-
-    #                 db.add(new_folder_item)
-    #                 db.commit()
-    #                 db.refresh(new_folder_item)
-    #             else:
-    #                 print("No valid folder id found, skipping this part")
-
-    #         logging.info("Successfully saved content for user.")
-
-    # except Exception as e:
-    #     logging.error(f"Error occurred while saving the bookmark: {str(e)}")
 
     
 

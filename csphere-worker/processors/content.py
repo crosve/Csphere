@@ -20,7 +20,7 @@ class ContentProcessor(BaseProcessor):
         super().__init__()
 
 
-    def process(self, message: dict):
+    def process(self, message: dict) -> str:
 
         user_id, notes, folder_id, content_data = self.extract_data(message=message)
 
@@ -91,7 +91,10 @@ class ContentProcessor(BaseProcessor):
 
                 logging.info("Successfully saved content for user.")
 
+                return new_content.content_id
+
         except Exception as e:
             logging.error(f"Error occurred while saving the bookmark: {str(e)}")
+            return ''
             
         
