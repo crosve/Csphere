@@ -12,7 +12,7 @@ from datetime import datetime
 
 
 class FolderBucketData(BaseModel):
-    folder_id : str
+    folder_id : UUID
     folder_name: str
     keywords: Optional[list[str] ] = None or []
     url_patterns: Optional[list[str]] = None or []

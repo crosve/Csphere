@@ -18,7 +18,7 @@ def update_folder_metadata(
     user_id: UUID,
     metadata: FolderMetadata,
 ) -> Folder:
-    folder = (
+    folder : Folder = (
         db.query(Folder)
         .filter(
             Folder.folder_id == folder_id,
@@ -32,6 +32,8 @@ def update_folder_metadata(
 
     folder.folder_name = metadata.name
     folder.bucketing_mode = metadata.smartBucketingEnabled
+
+    print("current url patterns: ", metadata)
 
     if metadata.smartBucketingEnabled:
         folder.keywords = metadata.keywords

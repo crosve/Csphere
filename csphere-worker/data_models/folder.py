@@ -1,7 +1,6 @@
 from sqlalchemy import Column, String, TIMESTAMP, ForeignKey, Boolean
 from sqlalchemy.dialects.postgresql import UUID
-from app.db.database import Base
-from pydantic import BaseModel, EmailStr
+from database import Base
 from datetime import datetime
 import uuid
 

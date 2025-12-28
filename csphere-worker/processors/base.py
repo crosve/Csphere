@@ -14,7 +14,7 @@ class BaseProcessor(ABC):
 
     def __init__(self):
         self.db = self.get_db()
-        self.embedding_manager = ContentEmbeddingManager()
+        self.embedding_manager = ContentEmbeddingManager(self.db)
 
 
     @abstractmethod

@@ -109,6 +109,7 @@ def process_folder_metadata(
     db: Session = Depends(get_db),
 ):
     try:
+        logging.info(f"Folder metdata being processed: {metadata}")
         folder = update_folder_metadata(
             db=db,
             folder_id=folder_id,
@@ -246,6 +247,9 @@ def create_folder(folderDetails: FolderDetails, user_id: UUID=Depends(get_curren
             user_id= user_id, 
             parent_id = folderDetails.folderId if folderDetails.folderId else folder_uuid,
             folder_name = folderDetails.foldername,
+            bucketing_mode = False, 
+            keywords = [], 
+            url_patterns = [],
             created_at=datetime.utcnow() 
         )
         db.add(new_folder)
@@ -266,6 +270,7 @@ def create_folder(folderDetails: FolderDetails, user_id: UUID=Depends(get_curren
 
 
     except Exception as e:
+        logging.error(f"Failed to create folder for user: {e}")
         return {'success' : False, 'message' : str(e)}
 
 

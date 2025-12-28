@@ -9,7 +9,7 @@ from data_models.content_item import ContentItem
 from data_models.folder_item import folder_item  # Consider renaming to CamelCase if it's a class
 from data_models.folder import Folder
 from classes.EmbeddingManager import ContentEmbeddingManager
-from exceptions.bucket_excpetions import FoldersNotFound
+from exceptions.bucket_excpetions import FoldersNotFound, ItemExistInFolder
 from schemas.folder_schemas import FolderBucketData
 from schemas.content_schemas import ContentPayload
 
@@ -18,6 +18,9 @@ from typing import List, Tuple
 from sklearn.metrics.pairwise import cosine_similarity
 import re
 import numpy as np
+
+from datetime import datetime, timezone
+
 
 # Use the module-level logger consistently
 logger = logging.getLogger(__name__)
@@ -56,9 +59,13 @@ class BucketProcessor(BaseProcessor):
                 folders=user_folder_data
             )
 
+            logging.info(f"matched folder: {matched_folder_id}")
+
             if matched_folder_id:
                 logger.info(f"Content matched to folder: {matched_folder_id}")
                 self.assign_to_folder(content_data, matched_folder_id, content_id, user_id)
+
+            logging.info("Succesfully bucketed the new content")
             
             return True
     
@@ -133,9 +140,12 @@ class BucketProcessor(BaseProcessor):
 
         # Sort by score descending and pick the best one above a threshold
         scores.sort(key=lambda x: x[1], reverse=True)
+        logging.info(f"Scores for current content: {scores}")
         
         if scores and scores[0][1] > 0.35:  # Confidence Threshold
             return scores[0][0]
+        
+        
         
         return None
 
@@ -147,7 +157,7 @@ class BucketProcessor(BaseProcessor):
         present = db.query(folder_item).filter(content_id == folder_item.content_id, matched_folder_id == folder_item.folder_id, user_id == folder_item.user_id).first()
 
         if present:
-          raise 
+          raise ItemExistInFolder(item_id=content_id, folder_id=matched_folder_id)
 
         try:
             new_item = folder_item(
@@ -155,13 +165,14 @@ class BucketProcessor(BaseProcessor):
                 folder_id = matched_folder_id,
                 user_id = user_id, 
                 content_id = content_id,
-                added_at = datetime.utcnow()
+                added_at = datetime.now(tz=timezone.utc)
 
             )
 
             db.add(new_item)
             db.commit()
             db.refresh(new_item)
+            logging.info('succesfully saved the content to the folder')
 
             return {'success' : True, 'message' : 'Bookmark added to folder'} 
 
