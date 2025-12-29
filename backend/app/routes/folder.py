@@ -88,7 +88,9 @@ def get_folder_metadata(folder_id : str, db: Session = Depends(get_db)):
             "name" : folder.folder_name if not None else '', 
             "keywords" : folder.keywords if not None else [],
             "urlPatterns" : folder.url_patterns if not None else [], 
+            "description" : folder.description if not None else '',
             "smartBucketingEnabled" : folder.bucketing_mode if not None else False
+
         }
 
         return {'success'  : True, 'message': 'Data fetched successfully', 'data' : payload }
@@ -250,6 +252,7 @@ def create_folder(folderDetails: FolderDetails, user_id: UUID=Depends(get_curren
             bucketing_mode = False, 
             keywords = [], 
             url_patterns = [],
+            description='',
             created_at=datetime.utcnow() 
         )
         db.add(new_folder)

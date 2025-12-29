@@ -21,6 +21,7 @@ class Folder(Base):
     bucketing_mode : Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     keywords : Mapped[list[str]] = mapped_column(ARRAY(String))
     url_patterns : Mapped[list[str]] = mapped_column(ARRAY(String))
+    description : Mapped[str] = mapped_column(String)
     created_at = Column(TIMESTAMP, server_default="NOW()")
 
 

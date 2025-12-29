@@ -38,9 +38,12 @@ def update_folder_metadata(
     if metadata.smartBucketingEnabled:
         folder.keywords = metadata.keywords
         folder.url_patterns = metadata.urlPatterns
+        folder.description = metadata.description
+
     else:
-        folder.keywords = []
-        folder.url_patterns = []
+        folder.bucketing_mode = False
+        # folder.keywords = []
+        # folder.url_patterns = []
 
     db.commit()
     db.refresh(folder)

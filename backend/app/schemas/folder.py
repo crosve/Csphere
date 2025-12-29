@@ -29,5 +29,6 @@ class FolderItem(BaseModel):
 class FolderMetadata(BaseModel):
     name: str
     smartBucketingEnabled: bool
+    description: Optional[str] = ''
     keywords: list[str]
     urlPatterns: list[str]

@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CiSettings } from "react-icons/ci";
+import { Textarea } from "@/components/ui/textarea";
 
 interface PathProps {
   id: string;
@@ -29,6 +30,7 @@ interface FolderMetadata {
   name: string;
   keywords: string[];
   urlPatterns: string[];
+  description: string;
   smartBucketingEnabled: boolean;
 }
 
@@ -47,13 +49,19 @@ function FolderSettingsDialog({
   const [newKeyword, setNewKeyword] = useState("");
   const [newPattern, setNewPattern] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
-  console.log("Current UI State:", metadata);
 
   useEffect(() => {
-    console.log("metadata being set: ", initialMetadata);
     setMetadata(initialMetadata);
-    console.log("new data has been set");
   }, [initialMetadata]);
+
+  const updateDescription = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    e.preventDefault();
+    console.log("current target value; ", e.target.value);
+    setMetadata({
+      ...metadata,
+      description: e.target.value,
+    });
+  };
 
   const addKeyword = () => {
     if (
@@ -285,6 +293,24 @@ function FolderSettingsDialog({
                       </div>
                     </div>
 
+                    {/*User inputted description (optional) */}
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">
+                        Description (Optional)
+                      </Label>
+                      <p className="text-xs text-gray-500 mb-3">
+                        Description of this folder to help define the purpose of
+                        this folder.
+                      </p>
+
+                      <Textarea
+                        value={metadata.description}
+                        className="flex-1 text-sm font-mono bg-white border-gray-300"
+                        placeholder="Type the folder decription here..."
+                        onChange={(e) => updateDescription(e)}
+                      />
+                    </div>
+
                     {/* Preview */}
                     <div className="p-3 bg-gray-50 rounded-md border border-gray-200">
                       <div className="text-xs font-medium text-gray-700 mb-2">
@@ -352,6 +378,7 @@ export default function Page({
     keywords: [],
     urlPatterns: [],
     smartBucketingEnabled: false,
+    description: "",
   });
 
   useEffect(() => {
@@ -433,6 +460,7 @@ export default function Page({
     // TODO: Save to your API
     const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/folder/${folderId}`;
     const token = fetchToken();
+    console.log("folder metadata being saved: ", metadata);
     await fetch(API_URL, {
       method: "PUT",
       headers: {
