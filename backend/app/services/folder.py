@@ -62,6 +62,12 @@ def update_folder_metadata(
 
     db.commit()
     db.refresh(folder)
+
+    new_folder_embedding = create_folder_embedding(db=db, folder=folder)
+
+    if new_folder_embedding:
+        folder.folder_embedding = new_folder_embedding
+        db.commit()
     return folder
 
 
