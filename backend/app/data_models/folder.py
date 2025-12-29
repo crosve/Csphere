@@ -4,6 +4,8 @@ from app.db.database import Base
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 import uuid
+from pgvector.sqlalchemy import Vector
+
 
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -22,6 +24,7 @@ class Folder(Base):
     keywords : Mapped[list[str]] = mapped_column(ARRAY(String))
     url_patterns : Mapped[list[str]] = mapped_column(ARRAY(String))
     description : Mapped[str] = mapped_column(String)
+    folder_embedding = Column(Vector(1536), nullable=True) #1536 for the gpt model param (small model)
     created_at = Column(TIMESTAMP, server_default="NOW()")
 
 

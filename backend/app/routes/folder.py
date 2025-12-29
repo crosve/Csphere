@@ -10,7 +10,7 @@ from app.data_models.content import Content
 from app.data_models.content_item import ContentItem
 from app.data_models.content_ai import ContentAI
 
-from app.services.folder import update_folder_metadata
+from app.services.folder import update_folder_metadata, create_user_folder
 
 from app.db.database import get_db
 from app.schemas.folder import  FolderDetails, FolderItem, FolderMetadata
@@ -228,53 +228,64 @@ def get_users_folders( user_id: UUID=Depends(get_current_user_id), db: Session =
 #Edit the api endpoint protocol later
 @router.post("/user/folder/create")
 def create_folder(folderDetails: FolderDetails, user_id: UUID=Depends(get_current_user_id), db: Session = Depends(get_db)):
-    print("folder details: ", folderDetails)
 
-    #check for existing folders with the same name under the same user_id
-    duplicates = db.query(Folder).filter(
-    Folder.user_id == user_id,
-    Folder.folder_name == folderDetails.foldername
-        ).all()
-    print(f"Found {len(duplicates)} folders with same name and user.")
-
-    if duplicates:
-        print("folder already exists: ", duplicates)
-        raise HTTPException(status_code=400, detail="Folder already exists") 
-    
-    folder_uuid = uuid4()
-    
     try:
-        new_folder = Folder(
-            folder_id = folder_uuid,
-            user_id= user_id, 
-            parent_id = folderDetails.folderId if folderDetails.folderId else folder_uuid,
-            folder_name = folderDetails.foldername,
-            bucketing_mode = False, 
-            keywords = [], 
-            url_patterns = [],
-            description='',
-            created_at=datetime.utcnow() 
-        )
-        db.add(new_folder)
-        db.commit()
-        db.refresh(new_folder)
-        
+        folder_creation_details = create_user_folder(db=db, folderDetails=folderDetails, user_id=user_id)
 
-        folder_details = {
-            'folder_id' : new_folder.folder_id,
-            'created_at' : new_folder.created_at, 
-            'folder_name' : new_folder.folder_name,
-            'parent_id' : new_folder.parent_id,
-            'file_count' : 0
-
-        }
-
-        return {'success' : True, 'message' : 'folder created successfully', 'folder_details': folder_details}
+        return folder_creation_details
 
 
     except Exception as e:
-        logging.error(f"Failed to create folder for user: {e}")
-        return {'success' : False, 'message' : str(e)}
+        logging.error(f"failed to create user folder: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to create folder: {e}")
+
+    # print("folder details: ", folderDetails)
+
+    # #check for existing folders with the same name under the same user_id
+    # duplicates = db.query(Folder).filter(
+    # Folder.user_id == user_id,
+    # Folder.folder_name == folderDetails.foldername
+    #     ).all()
+    # print(f"Found {len(duplicates)} folders with same name and user.")
+
+    # if duplicates:
+    #     print("folder already exists: ", duplicates)
+    #     raise HTTPException(status_code=400, detail="Folder already exists") 
+    
+    # folder_uuid = uuid4()
+    
+    # try:
+    #     new_folder = Folder(
+    #         folder_id = folder_uuid,
+    #         user_id= user_id, 
+    #         parent_id = folderDetails.folderId if folderDetails.folderId else folder_uuid,
+    #         folder_name = folderDetails.foldername,
+    #         bucketing_mode = False, 
+    #         keywords = [], 
+    #         url_patterns = [],
+    #         description='',
+    #         created_at=datetime.utcnow() 
+    #     )
+    #     db.add(new_folder)
+    #     db.commit()
+    #     db.refresh(new_folder)
+        
+
+    #     folder_details = {
+    #         'folder_id' : new_folder.folder_id,
+    #         'created_at' : new_folder.created_at, 
+    #         'folder_name' : new_folder.folder_name,
+    #         'parent_id' : new_folder.parent_id,
+    #         'file_count' : 0
+
+    #     }
+
+    #     return {'success' : True, 'message' : 'folder created successfully', 'folder_details': folder_details}
+
+
+    # except Exception as e:
+    #     logging.error(f"Failed to create folder for user: {e}")
+    #     return {'success' : False, 'message' : str(e)}
 
 
 @router.delete("/folder/{folder_id}")
