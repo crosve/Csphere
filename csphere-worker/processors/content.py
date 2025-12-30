@@ -22,15 +22,17 @@ class ContentProcessor(BaseProcessor):
 
     def process(self, message: dict) -> str:
 
-        user_id, notes, folder_id, content_data = self.extract_data(message=message)
+        user_id, notes, folder_id, _, content_data = self.extract_data(message=message)
 
         content_url = content_data.get('url')
 
-        if self.handle_if_exists(content_url, user_id, notes, folder_id):
+        existing_content_id = self.handle_if_exists(content_url, user_id, notes, folder_id)
+
+        if existing_content_id != '':
             logger.info('Content existed and was saved appropiatly')
-            return 
+            return existing_content_id
         
-        new_content = Content(**content_data)
+        new_content : Content = Content(**content_data)
 
         try:
             self.db.add(new_content)

@@ -1,153 +1,193 @@
 import logging
 from uuid import uuid4
-import datetime
+import re
+import numpy as np
+from datetime import datetime, timezone
+from typing import List, Tuple, Optional
 
-# Standardized imports: Grouping by standard library, third-party, then local modules
 from .base import BaseProcessor
 from data_models.content import Content
 from data_models.content_item import ContentItem
-from data_models.folder_item import folder_item  # Consider renaming to CamelCase if it's a class
+from data_models.folder_item import folder_item  
+from data_models.content_ai import ContentAI
 from data_models.folder import Folder
 from classes.EmbeddingManager import ContentEmbeddingManager
-from exceptions.bucket_excpetions import FoldersNotFound, ItemExistInFolder
+from exceptions.bucket_excpetions import FoldersNotFound, ItemExistInFolder, EmbeddingNotFound, ContentSummaryNotFound
 from schemas.folder_schemas import FolderBucketData
 from schemas.content_schemas import ContentPayload
 
-from typing import List, Tuple
+from rapidfuzz import fuzz
 
-from sklearn.metrics.pairwise import cosine_similarity
-import re
-import numpy as np
+# Using pgvector specific functions if available in your SQLAlchemy setup
+from sqlalchemy import func
 
-from datetime import datetime, timezone
-
-
-# Use the module-level logger consistently
 logger = logging.getLogger(__name__)
 
 class BucketProcessor(BaseProcessor):
-    def __init__(self):
+    def __init__(self, content_embedding: list[float] = None):
         super().__init__()
+        self.content_embedding = content_embedding
+        self.user_id = None
 
-
-    def process(self, message: dict, content_id : str) -> bool:
-        """
-        Process the message metadata to match with the current users folders.
-        """
-        # 1. Added a try-except block around data extraction to handle malformed messages
+    def process(self, message: dict, content_id: str) -> bool:
         try:
-            content_data : ContentPayload = None
-            user_id, notes, folder_id, content_data = self.extract_data(message=message)
-        except (KeyError, ValueError) as e:
-            logger.error(f"Failed to extract data from message: {e}")
-            return False
+            # 1. Data Extraction & State Setup
+            # We capture user_id to scope the Vector Search later
+            user_id, notes, folder_id, raw_html, content_data = self.extract_data(message=message)
+            self.user_id = user_id
 
-        try:
-            user_folder_data : list[FolderBucketData] = self.get_user_folders(user_id=user_id)
+            # 2. Embedding Retrieval
+            # If embedding isn't passed in, fetch the pre-calculated one from ContentAI table
+            if self.content_embedding is None:
+                self.content_embedding = self._get_content_embedding(content_id=content_id)
+            
+            # 3. Preparation for Matching
 
-            # html_content = self.get_html_content(content_data.url)
+            #get the content summary 
+            content_summary : str = self._get_content_ai_summary(content_id=content_id)
+            content_text : str = f"{content_data.get('title', '')} {notes or ''}{content_summary or ''}".lower()
+            content_url : str = content_data.get('url', '').lower()
 
-            # 1. Prepare Content for Matching
-            # We combine title and notes to create a 'searchable' string
-            content_text = f"{content_data.get('title', '')} {notes or ''}".lower()
-            content_url = content_data.get('url', '').lower()
-
-            # 2. Run the Matching Engine
+            # 4. Hybrid Matching Engine
+            # This calls the DB for the top 5, then reranks them locally
             matched_folder_id = self.find_best_matching_folder(
                 content_text=content_text,
-                content_url=content_url,
-                folders=user_folder_data
+                content_url=content_url
             )
-
-            logging.info(f"matched folder: {matched_folder_id}")
 
             if matched_folder_id:
                 logger.info(f"Content matched to folder: {matched_folder_id}")
                 self.assign_to_folder(content_data, matched_folder_id, content_id, user_id)
-
-            logging.info("Succesfully bucketed the new content")
+                return True
             
+            logger.info("No confident match found for content.")
             return True
-    
 
         except FoldersNotFound:
-            # 2. Changed logging to use 'logger' instance instead of 'logging' root
-            logger.info(f"No bucketing folders found for user {user_id}, skipping.")
+            logger.info(f"No bucketing folders found for user {self.user_id}, skipping.")
             return True
-        
         except Exception as e:
-            logger.error(f"Unexpected error processing folders for user {user_id}: {e}", exc_info=True)
+            logger.error(f"Unexpected error in BucketProcessor: {e}", exc_info=True)
             return False
 
-    def get_user_folders(self, user_id: str) -> list[FolderBucketData]:
+    def find_best_matching_folder(self, content_text: str, content_url: str) -> Optional[str]:
         """
-        Retrieves active bucketing folders for a specific user.
+        Two-Step Matching: 
+        1. Recall (Vector Search in DB)
+        2. Rerank (Heuristics & Score Weighting)
         """
-
-        user_folders = self.db.query(Folder).filter(
-            Folder.user_id == user_id,
-            Folder.bucketing_mode == True
-        ).all()
-
-        if not user_folders:
-            # 4. FoldersNotFound should be raised if the list is empty
-            raise FoldersNotFound()
+        # STEP 1: RECALL - Get Top 5 candidates from DB using pgvector
+        # This is the "Amazon Level" efficiency - we don't loop over every folder in Python.
+        candidates = self._get_best_matching_folders(self.content_embedding, self.user_id)
         
-        # 5. List comprehension is more "Pythonic" and faster than manual for-loops
-        return [
-            FolderBucketData(
-                folder_id=f.folder_id,
-                folder_name=f.folder_name,
-                keywords=f.keywords,
-                url_patterns=f.url_patterns
-            ) for f in user_folders
-        ]
-    
-    def find_best_matching_folder(self, content_text: str, content_url: str, folders: List[FolderBucketData]) -> str:
-        """
-        Amazon-level matching using a Weighted Scoring Algorithm.
-        """
+        if not candidates:
+            return None
+
         scores = []
 
-        for folder in folders:
-            score = 0.0
+        for folder_row in candidates:
+            folder : Folder = folder_row.Folder  # The Folder Object
+            vector_similarity = folder_row.similarity  # The score from the DB search
+
+            if not vector_similarity :
+                continue
+            logging.info(f"Current folder is: {folder.folder_name}")
+            logging.info(f"Vector similarity score: {vector_similarity}")
             
-            # LAYER 1: URL Pattern Matching (Weight: 1.0 - Instant Match)
+            score = 0.0
+
+            # LAYER 1: URL Pattern (The "Deterministic" Match)
+            # If the URL matches a pattern, we give it a massive boost (Amazon-style Rule Engine)
             if folder.url_patterns:
                 for pattern in folder.url_patterns:
-                    if re.search(pattern.lower(), content_url):
-                        return folder.folder_id  # Early exit for deterministic matches
+                    try:
+                        if re.search(pattern.lower(), content_url):
+                            return folder.folder_id  # Immediate exit for high-confidence match
+                    except re.error:
+                        continue
 
-            # LAYER 2: Keyword Boosting (Weight: 0.6)
-            # We count how many keywords appear in the content
+            # LAYER 2: Keyword Overlap (The "Signal" Match)
+            # Weights: 40% of the local reranking score
             if folder.keywords:
                 matches = sum(1 for kw in folder.keywords if kw.lower() in content_text)
-                score += (matches / len(folder.keywords)) * 0.6 if folder.keywords else 0
+                keyword_score = (matches / len(folder.keywords))
+                score += keyword_score * 0.2
 
-            # LAYER 3: Semantic Vector Similarity (Weight: 0.4)
-            # Using your EmbeddingManager to compare intent
-            try:
-                folder_vector = self.embedding_manager._generate_embedding(folder.folder_name)
-                content_vector = self.embedding_manager._generate_embedding(content_text)
-                
-                # Cosine similarity returns a value between 0 and 1
-                semantic_score = cosine_similarity([folder_vector], [content_vector])[0][0]
-                score += semantic_score * 0.4
-            except Exception as e:
-                logger.warning(f"Semantic match failed for folder {folder.folder_id}: {e}")
+            if folder.description and folder.description.strip():
+                desc_similarity = fuzz.token_set_ratio(folder.description.lower(), content_text) / 100.0
+                score += desc_similarity * 0.2 # 20% weight for descriptive context
+
+
+            # LAYER 3: Semantic Strength (The "Intent" Match)
+            # Weights: 60% of the local reranking score
+            # We use the vector similarity already calculated by the DB!
+            score += vector_similarity * 0.6
+
+            #later on update based on saved bookmarks in this folder 
 
             scores.append((folder.folder_id, score))
 
-        # Sort by score descending and pick the best one above a threshold
+        # Sort by total calculated score
         scores.sort(key=lambda x: x[1], reverse=True)
-        logging.info(f"Scores for current content: {scores}")
+
+        logging.info(f"Current scoring of folders: {scores}")
         
-        if scores and scores[0][1] > 0.35:  # Confidence Threshold
+        # CONFIDENCE THRESHOLD
+        # Amazon doesn't match if it's not sure. 0.45 is a solid starting point for cosine similarity
+        if scores and scores[0][1] > 0.25:
             return scores[0][0]
         
-        
-        
         return None
+
+    def _get_best_matching_folders(self, metadataVector: list[float], user_id: str):
+        """
+        Executes pgvector cosine distance search.
+        Moves the compute-heavy similarity check to the database.
+        """
+        # Distance operator <=> calculates cosine distance (0 to 2)
+        # We subtract from 1 to get similarity (1.0 is perfect match)
+        cosine_dist = Folder.folder_embedding.cosine_distance(metadataVector)
+        similarity = (1 - cosine_dist).label("similarity")
+
+        results = (
+            self.db.query(Folder, similarity)
+            .filter(Folder.user_id == user_id)
+            .filter(Folder.bucketing_mode == True)
+            .order_by(cosine_dist) # Nearest distance first
+            .limit(5)
+            .all()
+        )
+        return results
+
+    def _get_content_embedding(self, content_id: str) -> list[float]:
+        """Fetch pre-calculated embedding from the AI table."""
+        result = self.db.query(ContentAI.embedding).filter(ContentAI.content_id == content_id).first()
+        
+        if result is None:
+            logger.error(f"No ContentAI record found for content_id {content_id}")
+            raise EmbeddingNotFound(content_id=content_id)
+            
+        if result.embedding is None:
+            logger.error(f"Embedding column is empty for content_id {content_id}")
+            raise EmbeddingNotFound(content_id=content_id)
+            
+        return result.embedding
+
+    def _create_folder_profile_embedding(self, folder: Folder):
+        """
+        Run this when a folder is created or metadata is updated.
+        Creates a rich string representation for better vectorization.
+        """
+        parts = [
+            f"Folder: {folder.folder_name}",
+            f"Context: {', '.join(folder.keywords) if folder.keywords else ''}",
+            f"Rules: {', '.join(folder.url_patterns) if folder.url_patterns else ''}"
+        ]
+        input_text = " ".join(parts)
+        
+        # Generate via your manager
+        embedding_mgr = ContentEmbeddingManager(db=self.db)
+        return embedding_mgr._generate_embedding(input_text)
 
 
 
@@ -180,5 +220,45 @@ class BucketProcessor(BaseProcessor):
 
         except Exception as e:
             logging.error(f"Error matching folder {e}" )
+
+   
+    
+    @staticmethod
+    def _create_content_embeding(self, folder: Folder):
+        parts = [
+            f"Folder name: {folder.folder_name}",
+            f"Description: {folder.description}" if folder.description else None,
+            f"Keywords: {', '.join(folder.keywords)}" if folder.keywords else None,
+            f"URL patterns: {', '.join(folder.url_patterns)}" if folder.url_patterns else None,
+        ]
+
+        embedding_text = "\n".join(p for p in parts if p)
+
+        embedding_mgr = ContentEmbeddingManager(db=self.db)
+        return embedding_mgr._generate_embedding(embedding_text)
+    
+    def _get_content_ai_summary(self, content_id):
+
+        try:
+
+            db = self.db 
+            content_summary = db.query(ContentAI.ai_summary).filter(ContentAI.content_id == content_id ).first()
+
+            if not content_summary:
+                logging.error(f"Failed to fetch content summary")
+                raise ContentSummaryNotFound(content_id=content_id)
+
+            return content_summary.ai_summary
+        except Exception as e:
+            logging.error(f"Error occured trying to get the IA summary: {e}")
+
+    
+
+
+
+
+        
+
+
 
 

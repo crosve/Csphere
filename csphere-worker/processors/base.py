@@ -35,7 +35,6 @@ class BaseProcessor(ABC):
         return db 
     
 
-    @staticmethod
     def get_html_content(self, url: str) -> str:
         try:
             response = requests.get(url)
@@ -64,24 +63,32 @@ class BaseProcessor(ABC):
         user_id = message.get('user_id')
         notes = message.get('notes')
         folder_id = message.get('folder_id', '')
+        raw_html = message.get('raw_html', '')
         content_data = message.get('content_payload', {})
+
+        
 
 
         if content_data == {}:
             logger.error("Content data is empty, returning")
             raise ValueError("Content data was empty, no content payload available")
         
-        return (user_id, notes, folder_id, content_data)
+        # if raw_html == '':
+        #     logging.info("No raw html was provided, fetching raw html now")
+
+        #     raw_html = self.get_html_content(url=content_data.get('url'))
+        
+        return (user_id, notes, folder_id, raw_html, content_data)
     
-    def handle_if_exists(self, content_url: str, user_id: int, notes:str, folder_id: int) -> bool :
-        existing_content = self.db.query(Content).filter(Content.url == content_url).first()
+    def handle_if_exists(self, content_url: str, user_id: int, notes:str, folder_id: int) -> str :
+        existing_content : Content = self.db.query(Content).filter(Content.url == content_url).first()
 
         if existing_content:
             handle_existing_content(existing_content, user_id, self.db, notes, folder_id)
             logger.info("Bookmark succesfully saved to user")
-            return True
+            return existing_content.content_id
         
-        return False
+        return ''
         
 
 

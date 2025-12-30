@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 from processors import get_processor
 from processors.bucket import BucketProcessor
 from processors.content import ContentProcessor
+from schemas.content_schemas import MessageSchema
 
 #Logging config stuff
 logging.basicConfig(
@@ -30,14 +31,34 @@ load_dotenv()
 
 
 
-def handle_message(message):
+    # payload = {
+    #     "content_payload": {
+    #         "url": url,
+    #         "title": title,
+    #         "source": source,
+    #         "first_saved_at": utc_time.isoformat(),
+    #     },
+    #     "raw_html": html[0:50],
+    #     "user_id": str(user_id),
+    #     "notes": notes,
+    #     "folder_id": str(folder_id) if folder_id else None,
+    # }
+
+
+def handle_message(message : dict, pydantic_message : MessageSchema):
 
     #
     try:
+        print('here 1')
         messageProcessor : ContentProcessor = get_processor('process_message')
+        logging.info("got the processor")
         content_id : str = messageProcessor.process(message=message)
 
-        if content_id != '':
+        print('here')
+
+        #only process if there is no folder id
+        if content_id != '' and pydantic_message.folder_id == 'default':
+            logging.info('processing the content for folders')
             bucketProcessor : BucketProcessor = get_processor('process_folder')
             bucketProcessor.process(message=message, content_id=content_id)
 
@@ -74,10 +95,13 @@ def poll_and_process():
 
                 try:
                     msg_json = json.loads(message)
+                    #Validate the message JSON 
+                    pydantic_msg = MessageSchema(**msg_json)
                     logging.info(f"Message json: {msg_json}")
+                    logging.info(f"Pydantic message: {pydantic_msg}")
                     try:
                         #function to actually handle the message / bookmark
-                        handle_message(msg_json)
+                        handle_message(msg_json, pydantic_msg)
                     except Exception as e:
                         logging.error(f"[ERROR] An error occurred in handle_message: {e} \n Message: {msg_json}")
                         # retryCount = msg.get('retryCount', 0) + 1
