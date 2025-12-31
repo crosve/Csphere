@@ -37,7 +37,7 @@ class BaseProcessor(ABC):
 
     def get_html_content(self, url: str) -> str:
         try:
-            response = requests.get(url)
+            response = requests.get(url=url)
             if response.status_code == 200:
                 # Get the HTML content as a string
                 html_content = response.text

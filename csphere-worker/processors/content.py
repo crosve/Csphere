@@ -45,6 +45,7 @@ class ContentProcessor(BaseProcessor):
 
             if raw_html == '':
                 logging.info("No raw html provided, categorization and summarization may be poor")
+                raw_html = self.get_html_content(url=content_url)
 
             content_ai = content_manager.process_content(new_content, raw_html)
 

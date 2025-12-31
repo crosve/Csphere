@@ -10,7 +10,7 @@ from app.data_models.content import Content
 from app.data_models.content_item import ContentItem
 from app.data_models.content_ai import ContentAI
 
-from app.services.folder import update_folder_metadata, create_user_folder
+from app.services.folder import update_folder_metadata, create_user_folder, addItemToFolder
 
 from app.db.database import get_db
 from app.schemas.folder import  FolderDetails, FolderItem, FolderMetadata
@@ -173,29 +173,40 @@ def add_to_folder(itemDetails: FolderItem, user_id: UUID=Depends(get_current_use
 
     #make sure item isn't already in the DB
 
-    present = db.query(folder_item).filter(itemDetails.contentId == folder_item.content_id, itemDetails.folderId == folder_item.folder_id, user_id == folder_item.user_id).first()
-
-    if present:
-        raise HTTPException(status_code=400, detail="Item already in the folder")
-    
     try:
-        new_item = folder_item(
-            folder_item_id = uuid4(), 
-            folder_id = itemDetails.folderId,
-            user_id = user_id, 
-            content_id = itemDetails.contentId,
-            added_at = datetime.utcnow()
 
-        )
+        res = addItemToFolder(db=db, user_id=user_id, folder_id=itemDetails.folderId, itemDetails=itemDetails)
+        if res.get('success', False):
+            logging.info(f'Succesfully inserted item to folder')
+        else:
+            logging.warning(f"Something went wrong, Check out the logic ")
 
-        db.add(new_item)
-        db.commit()
-        db.refresh(new_item)
+        return res
 
-        return {'success' : True, 'message' : 'Bookmark added to folder'} 
+    # present = db.query(folder_item).filter(itemDetails.contentId == folder_item.content_id, itemDetails.folderId == folder_item.folder_id, user_id == folder_item.user_id).first()
+
+    # if present:
+    #     raise HTTPException(status_code=400, detail="Item already in the folder")
+    
+    # try:
+    #     new_item = folder_item(
+    #         folder_item_id = uuid4(), 
+    #         folder_id = itemDetails.folderId,
+    #         user_id = user_id, 
+    #         content_id = itemDetails.contentId,
+    #         added_at = datetime.utcnow()
+
+    #     )
+
+    #     db.add(new_item)
+    #     db.commit()
+    #     db.refresh(new_item)
+
+    #     return {'success' : True, 'message' : 'Bookmark added to folder'} 
 
 
     except Exception as e:
+        logging.error(f"Error occured trying to add the item to the folder: {e}")
         return {'success': False, 'message' : str(e)} 
     
 

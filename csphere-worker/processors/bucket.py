@@ -51,6 +51,7 @@ class BucketProcessor(BaseProcessor):
             # 4. Hybrid Matching Engine
             # This calls the DB for the top 5, then reranks them locally
             matched_folder_id = self.find_best_matching_folder(
+                content_title=content_data.get('title', ''),
                 content_text=content_text,
                 content_url=content_url
             )
@@ -58,6 +59,9 @@ class BucketProcessor(BaseProcessor):
             if matched_folder_id:
                 logger.info(f"Content matched to folder: {matched_folder_id}")
                 self.assign_to_folder(content_data, matched_folder_id, content_id, user_id)
+
+                #Update the centroid matrix for a better learning rate 
+                self.update_folder_learning(folder_id=matched_folder_id)
                 return True
             
             logger.info("No confident match found for content.")
@@ -70,7 +74,9 @@ class BucketProcessor(BaseProcessor):
             logger.error(f"Unexpected error in BucketProcessor: {e}", exc_info=True)
             return False
 
-    def find_best_matching_folder(self, content_text: str, content_url: str) -> Optional[str]:
+    #Next Steps:
+    #Find a way to correlate words like playlist to music for better precision
+    def find_best_matching_folder(self, content_title: str, content_text: str, content_url: str) -> Optional[str]:
         """
         Two-Step Matching: 
         1. Recall (Vector Search in DB)
@@ -115,13 +121,14 @@ class BucketProcessor(BaseProcessor):
 
             if folder.description and folder.description.strip():
                 desc_similarity = fuzz.token_set_ratio(folder.description.lower(), content_text) / 100.0
-                score += desc_similarity * 0.2 # 20% weight for descriptive context
+                score += desc_similarity * 0.30 # 20% weight for descriptive context
+
 
 
             # LAYER 3: Semantic Strength (The "Intent" Match)
-            # Weights: 60% of the local reranking score
+            # Weights: 50% of the local reranking score
             # We use the vector similarity already calculated by the DB!
-            score += vector_similarity * 0.6
+            score += vector_similarity * 0.5
 
             #later on update based on saved bookmarks in this folder 
 
@@ -134,8 +141,10 @@ class BucketProcessor(BaseProcessor):
         
         # CONFIDENCE THRESHOLD
         # Amazon doesn't match if it's not sure. 0.45 is a solid starting point for cosine similarity
-        if scores and scores[0][1] > 0.25:
+        if scores and round(float(scores[0][1]),2  )>= 0.20:
             return scores[0][0]
+        
+
         
         return None
 
@@ -251,6 +260,46 @@ class BucketProcessor(BaseProcessor):
             return content_summary.ai_summary
         except Exception as e:
             logging.error(f"Error occured trying to get the IA summary: {e}")
+
+
+    def update_folder_learning(self, folder_id: str):
+        """
+        Updates the folder's vector profile based on newly added content.
+        This allows the 'Amazon-level' matching to drift toward user habits.
+        """
+        db = self.db
+        folder = db.query(Folder).filter(Folder.folder_id == folder_id).first()
+
+        content_embedding : list[float] = self.content_embedding
+
+
+        # if folder is None or folder.folder_embedding is None or content_embedding is None:
+
+
+        if  folder is None or folder.folder_embedding is None or  content_embedding is None:
+            logging.error("Folder, folder embedding, or content combedding not found")
+            return
+
+        # Convert to numpy arrays for vector math
+        current_vec = np.array(folder.folder_embedding)
+        new_content_vec = np.array(content_embedding)
+
+        # LEARNING RATE (Alpha)
+        # 0.1 means the folder profile is 90% history and 10% this new item.
+        alpha = 0.1 
+
+        # Calculate the new centroid
+        updated_vec = ((1 - alpha) * current_vec) + (alpha * new_content_vec)
+
+        # Re-normalize the vector (Crucial for Cosine Similarity to work correctly)
+        norm = np.linalg.norm(updated_vec)
+        if norm > 0:
+            updated_vec = updated_vec / norm
+
+        # Save back to DB
+        folder.folder_embedding = updated_vec.tolist()
+        db.commit()
+        logger.info(f"Folder {folder_id} 'learned' from new content. Profile shifted.")
 
     
 

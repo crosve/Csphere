@@ -162,20 +162,10 @@ def save_content(content: ContentCreate, user_id: UUID = Depends(get_current_use
 def save_content_by_url(content: ContentSavedByUrl, user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
     try:
         safe_url = ensure_safe_url(content.url)
-        existing_content = db.query(Content).filter(Content.url == safe_url).first()
-        if existing_content:
-            return {"status": "unsuccessful", "message": "Content already exists"}
-        
-        # response = requests.get(url=safe_url, timeout=10)
-
-        # if response.status_code != 200:
-        #     raise HTTPException(status_code=response.status_code, detail="Failed to fetch content")
 
         html = ''
 
-        title =safe_url
-
-    
+        title =safe_url    
 
         _enqueue_new_content(
             url=safe_url,
