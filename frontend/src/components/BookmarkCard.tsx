@@ -169,7 +169,7 @@ export default function BookmarkCard({ bookmark }: BookmarkCardProps) {
     <>
       <div
         onClick={() => setIsModalOpen(true)}
-        className="border border-black rounded-lg p-6 hover:shadow-md transition-shadow flex flex-col justify-between h-full cursor-pointer"
+        className="border border-black rounded-lg p-6 wrap-break-word hover:shadow-md transition-shadow flex flex-col justify-between h-full cursor-pointer"
       >
         {/* Top metadata row */}
         <div className="flex justify-between items-center mb-4">
@@ -228,7 +228,6 @@ export default function BookmarkCard({ bookmark }: BookmarkCardProps) {
         )}
 
         <div className="relative mt-4">
-      
           {showNotes && <NotePopup note={bookmark.notes} />}
 
           {/* Footer */}
