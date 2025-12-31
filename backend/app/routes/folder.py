@@ -171,8 +171,6 @@ def get_folder_items(
 @router.post("/users/folder/add")
 def add_to_folder(itemDetails: FolderItem, user_id: UUID=Depends(get_current_user_id), db: Session = Depends(get_db)):
 
-    #make sure item isn't already in the DB
-
     try:
 
         res = addItemToFolder(db=db, user_id=user_id, folder_id=itemDetails.folderId, itemDetails=itemDetails)
@@ -182,28 +180,6 @@ def add_to_folder(itemDetails: FolderItem, user_id: UUID=Depends(get_current_use
             logging.warning(f"Something went wrong, Check out the logic ")
 
         return res
-
-    # present = db.query(folder_item).filter(itemDetails.contentId == folder_item.content_id, itemDetails.folderId == folder_item.folder_id, user_id == folder_item.user_id).first()
-
-    # if present:
-    #     raise HTTPException(status_code=400, detail="Item already in the folder")
-    
-    # try:
-    #     new_item = folder_item(
-    #         folder_item_id = uuid4(), 
-    #         folder_id = itemDetails.folderId,
-    #         user_id = user_id, 
-    #         content_id = itemDetails.contentId,
-    #         added_at = datetime.utcnow()
-
-    #     )
-
-    #     db.add(new_item)
-    #     db.commit()
-    #     db.refresh(new_item)
-
-    #     return {'success' : True, 'message' : 'Bookmark added to folder'} 
-
 
     except Exception as e:
         logging.error(f"Error occured trying to add the item to the folder: {e}")

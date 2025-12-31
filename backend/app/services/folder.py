@@ -47,6 +47,9 @@ def update_folder_metadata(
 
     if not folder:
         raise FolderNotFound()
+    
+    #save the previous folder embedding
+    prev_embedding = folder.folder_embedding
 
     folder.folder_name = metadata.name
     folder.bucketing_mode = metadata.smartBucketingEnabled
@@ -68,9 +71,25 @@ def update_folder_metadata(
 
     new_folder_embedding = create_folder_embedding(db=db, folder=folder)
 
-    if new_folder_embedding:
+    if new_folder_embedding is not None and prev_embedding is not None:
+        
+        alpha = 0.7
+        old_vec = np.array(prev_embedding)
+        meta_vec = np.array(new_folder_embedding)
+        
+        blended_vec = (alpha * meta_vec) + ((1 - alpha) * old_vec)
+        
+        # Re-normalize
+        norm = np.linalg.norm(blended_vec)
+        if norm > 0:
+            blended_vec = blended_vec / norm
+        
+        folder.folder_embedding = blended_vec.tolist()
+        
+        
+    else:
         folder.folder_embedding = new_folder_embedding
-        db.commit()
+    db.commit()
     return folder
 
 
@@ -262,3 +281,27 @@ def get_content_embedding(db: Session, content_id: str) -> list[float]:
             f"Failed to fetch content embedding for content_id={content_id}"
         )
         raise HTTPException(status_code=500, detail="Internal server error")
+    
+
+
+def _update_folder_embedding( db: Session,folder: Folder) -> Optional[list[float]]:
+
+    try:
+        prev_embedding = folder.folder_embedding
+        parts = [
+            f"Folder name: {folder.folder_name}",
+            f"Description: {folder.description}" if folder.description else None,
+            f"Keywords: {', '.join(folder.keywords)}" if folder.keywords else None,
+            f"URL patterns: {', '.join(folder.url_patterns)}" if folder.url_patterns else None,
+        ]
+
+        embedding_text = "\n".join(p for p in parts if p)
+
+        embedding_mgr = ContentEmbeddingManager(db=db)
+        return embedding_mgr._generate_embedding(embedding_text)
+
+    except Exception:
+        logging.exception("Failed to create folder embedding")
+        return None
+
+    
