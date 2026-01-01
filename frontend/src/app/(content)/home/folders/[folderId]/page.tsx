@@ -21,6 +21,8 @@ import { Button } from "@/components/ui/button";
 import { CiSettings } from "react-icons/ci";
 import { Textarea } from "@/components/ui/textarea";
 
+import FolderSelectionTab from "@/components/folder/FolderSelectionTab";
+
 interface PathProps {
   id: string;
   name: string;
@@ -373,6 +375,12 @@ export default function Page({
   const { folderId } = use(params);
   const [bookmarks, setBookmarks] = useState([]);
   const [paths, setPaths] = useState<PathProps[]>([]);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedAction, setSelectedAction] = useState<string>("");
+  const [selectedBookmarks, setSelectedBookmarks] = useState<Set<string>>(
+    new Set()
+  );
+
   const [folderMetadata, setFolderMetadata] = useState<FolderMetadata>({
     name: "",
     keywords: [],
@@ -473,6 +481,24 @@ export default function Page({
     setFolderMetadata(metadata);
   };
 
+  const handleSelectedAction = (action: string) => {
+    try {
+      console.log("all selected bookmarks: ", selectedBookmarks);
+      if (action === "remove") {
+        console.log("handling remove logic!");
+      } else {
+        alert("Unsupported action right now ");
+      }
+    } catch (e) {
+      console.log(
+        "An error occured when trying to handle the selected action",
+        e
+      );
+    } finally {
+      setSelectedAction("");
+    }
+  };
+
   return (
     <FolderIdLayout>
       <div className="w-full space-y-6 gap-4 mb-4">
@@ -480,6 +506,17 @@ export default function Page({
           <Breadcrumb paths={paths} />
 
           <div className="flex items-center space-x-2 w-auto">
+            <Button
+              onClick={() => {
+                setSelectionMode((prev) => !prev);
+                setSelectedBookmarks(new Set()); // reset on toggle
+              }}
+              variant="outline"
+              size="sm"
+              className="hover:bg-gray-300"
+            >
+              {selectionMode ? "Cancel Selection" : "Select Bookmarks"}
+            </Button>
             <FolderSettingsDialog
               folderId={folderId}
               initialMetadata={folderMetadata}
@@ -488,7 +525,27 @@ export default function Page({
           </div>
         </div>
 
-        <BookmarkList items={bookmarks} />
+        {selectionMode && (
+          <FolderSelectionTab
+            setSelectedAction={setSelectedAction}
+            handleSelectedAction={handleSelectedAction}
+            selectedAction={selectedAction}
+          />
+        )}
+
+        <BookmarkList
+          isFolder={true}
+          items={bookmarks}
+          selectionMode={selectionMode}
+          selectedBookmarks={selectedBookmarks}
+          onToggleSelect={(id) => {
+            setSelectedBookmarks((prev) => {
+              const next = new Set(prev);
+              next.has(id) ? next.delete(id) : next.add(id);
+              return next;
+            });
+          }}
+        />
       </div>
     </FolderIdLayout>
   );

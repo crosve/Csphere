@@ -2,6 +2,8 @@ import BookmarkCard from "./BookmarkCard";
 
 import { useContext } from "react";
 import { LayoutContext } from "@/app/(content)/home/BookmarkLayout";
+import FolderBookmarkCard from "./folder/FolderBookmarkCard";
+
 interface Tag {
   category_id: string;
   category_name: string;
@@ -15,8 +17,22 @@ type Bookmark = {
   tags?: Tag[];
 };
 
-export default function BookmarkList({ items }: { items: Bookmark[] }) {
+export default function BookmarkList({
+  items,
+  isFolder = false,
+  selectionMode,
+  selectedBookmarks,
+  onToggleSelect,
+}: {
+  items: Bookmark[];
+  isFolder: boolean;
+  selectionMode: boolean;
+  selectedBookmarks: Set<string>;
+  onToggleSelect: (id: string) => void;
+}) {
   const viewMode = useContext(LayoutContext);
+
+  console.log("is folder: ", isFolder);
   if (items.length === 0) {
     return <p className="text-center text-gray-500">No bookmarks found</p>;
   }
@@ -29,9 +45,26 @@ export default function BookmarkList({ items }: { items: Bookmark[] }) {
           : "grid-cols-1"
       }`}
     >
-      {items.map((item) => (
+      {isFolder
+        ? items.map((item) => {
+            const selected = selectedBookmarks.has(item.content_id);
+            return (
+              <FolderBookmarkCard
+                key={item.content_id}
+                bookmark={item}
+                selectable={selectionMode}
+                selected={selected}
+                onSelect={() => onToggleSelect(item.content_id)}
+              />
+            );
+          })
+        : items.map((item) => (
+            <BookmarkCard key={item.content_id} bookmark={item} />
+          ))}
+
+      {/* {items.map((item) => (
         <BookmarkCard key={item.content_id} bookmark={item} />
-      ))}
+      ))} */}
     </div>
   );
 }

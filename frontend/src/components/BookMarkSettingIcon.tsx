@@ -6,6 +6,7 @@ import ShareModal from "./ShareModal";
 interface BookMarkSettingProps {
   content_id: string;
   url: string;
+  folder_bookmark?: boolean;
 }
 
 interface FolderProps {
@@ -107,7 +108,11 @@ const FolderPopover = ({
   );
 };
 
-function BookMarkSettingIcon({ content_id, url }: BookMarkSettingProps) {
+function BookMarkSettingIcon({
+  content_id,
+  url,
+  folder_bookmark = false,
+}: BookMarkSettingProps) {
   const [mainPopoverOpen, setMainPopoverOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const handleAddToFolder = async (folder: FolderProps) => {
@@ -150,7 +155,9 @@ function BookMarkSettingIcon({ content_id, url }: BookMarkSettingProps) {
           <div className="absolute top-full left-0 -translate-x-80 md:-translate-x-52 mt-5 w-40 bg-gray-100 border border-gray-200 rounded-lg shadow-lg z-40">
             {" "}
             <div className="flex flex-1 flex-col space-y-1 p-1">
-              <FolderPopover onAddToFolder={handleAddToFolder} />
+              {!folder_bookmark && (
+                <FolderPopover onAddToFolder={handleAddToFolder} />
+              )}
 
               {/* Other menu items */}
               <div className="cursor-pointer hover:bg-gray-200 p-2 rounded transition-colors">

@@ -11,7 +11,8 @@ import { formatDate } from "@/lib/utils";
 import { toast } from "sonner";
 import NotePopup from "@/app/components/home/NotePopup";
 
-import BookMarkSettingIcon from "./BookMarkSettingIcon";
+import { cn } from "@/lib/utils";
+import BookMarkSettingIcon from "../BookMarkSettingIcon";
 import { BookmarkDetailModal } from "@/app/components/bookmark/BookmarkModel";
 
 interface NoteButtonProps {
@@ -26,9 +27,17 @@ interface NoteButtonProps {
 
 interface BookmarkCardProps {
   bookmark: Bookmark;
+  selectable: boolean;
+  selected: boolean;
+  onSelect: (id: string) => void;
 }
 
-export default function BookmarkCard({ bookmark }: BookmarkCardProps) {
+export default function FolderBookmarkCard({
+  bookmark,
+  selectable,
+  selected,
+  onSelect,
+}: BookmarkCardProps) {
   const [saved, setSaved] = useState<boolean>(true);
   const [showNotes, setShowNotes] = useState<boolean>(false);
   const [noteContent, setNoteContent] = useState<string>(() =>
@@ -36,6 +45,8 @@ export default function BookmarkCard({ bookmark }: BookmarkCardProps) {
   );
   const [editNotes, setEditNotes] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+
+  console.log("selectable status: ", selectable);
 
   const token = document.cookie
     .split("; ")
@@ -149,17 +160,28 @@ export default function BookmarkCard({ bookmark }: BookmarkCardProps) {
     }
   };
 
-  const handleNotePopoverClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent modal from opening when clicking notes
-  };
-
   return (
     <>
       <div
-        onClick={() => setIsModalOpen(true)}
-        className="border border-black rounded-lg p-6 wrap-break-word hover:shadow-md transition-shadow flex flex-col justify-between h-full cursor-pointer"
+        onClick={
+          selectable
+            ? () => onSelect(bookmark.content_id)
+            : () => setIsModalOpen(true)
+        }
+        className={cn(
+          "border relative border-black rounded-lg p-6 wrap-break-word hover:shadow-md transition-shadow flex flex-col justify-between h-full cursor-pointer",
+          selected && "ring-2 ring-gray-900 "
+        )}
       >
         {/* Top metadata row */}
+        {selectable && (
+          <input
+            type="checkbox"
+            checked={selected}
+            readOnly
+            className="absolute bg-amber-100 top-2 right-2"
+          />
+        )}
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-2">
             {bookmark.url ? (
