@@ -25,7 +25,7 @@ export default function BookmarkList({
   onToggleSelect,
 }: {
   items: Bookmark[];
-  isFolder: boolean;
+  isFolder?: boolean;
   selectionMode?: boolean;
   selectedBookmarks?: Set<string>;
   onToggleSelect?: (id: string) => void;
