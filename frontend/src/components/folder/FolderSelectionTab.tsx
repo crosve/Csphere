@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import type { Dispatch, SetStateAction } from "react";
 import { cn } from "@/lib/utils";
 
-const selectionItems = ["share", "download", "remove"];
+const selectionItems = ["remove"];
 interface FolderSelectionProps {
   setSelectedAction: Dispatch<SetStateAction<string>>;
   handleSelectedAction: (action: string) => void;
