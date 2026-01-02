@@ -156,10 +156,11 @@ def save_content_by_url(content: ContentSavedByUrl, user: User = Depends(get_cur
         html = ''
 
         title =safe_url    
+        logging.info(f"safe url being set: {safe_url}")
 
         _enqueue_new_content(
-            url=safe_url,
-            title=None, 
+            url=safe_url if safe_url else content.url,
+            title=content.url, 
             source="web_app",
             html=None,
             user_id=user.id,
