@@ -30,7 +30,7 @@ class ContentPayload(BaseModel):
 
 class MessageContentPayload(BaseModel):
     url: str  
-    title: str
+    title: str | None= ''
     source: str
     first_saved_at: datetime 
 
