@@ -54,10 +54,12 @@ def handle_message(message : dict, pydantic_message : MessageSchema):
             logging.info("got the processor")
             content_id : str = messageProcessor.process(message=message)
 
+            logging.info(f'content id returned after processing message: {content_id}')
+
             print('here')
 
             #only process if there is no folder id
-            if content_id != '' and pydantic_message.folder_id == 'default':
+            if content_id != '' and pydantic_message.folder_id in ['default',None, '']:
                 logging.info('processing the content for folders')
                 bucketProcessor : BucketProcessor = get_processor('process_folder', db=db)
                 bucketProcessor.process(message=message, content_id=content_id)

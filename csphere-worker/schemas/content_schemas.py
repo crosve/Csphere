@@ -39,4 +39,4 @@ class MessageSchema(BaseModel):
     raw_html: Optional[str ] = None
     user_id: str 
     notes: Optional[str] = None  
-    folder_id: Optional[str] = None  
+    folder_id: Optional[str] = 'default'  

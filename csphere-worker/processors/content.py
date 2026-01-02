@@ -93,7 +93,8 @@ class ContentProcessor(BaseProcessor):
                     else:
                         print("No valid folder id found, skipping this part")
 
-                logging.info("Successfully saved content for user.")
+                logging.info(f"Successfully saved content for user. Returning content id: {new_content.content_id}")
+
 
                 return new_content.content_id
 
