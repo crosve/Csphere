@@ -84,7 +84,7 @@ dependencies = [
     "platformdirs==4.3.8",
     "propcache==0.3.2",
     "psutil==7.0.0",
-    "psycopg-binary",
+    "psycopg2==2.9.11",
     "pyasn1==0.6.1",
     "pyasn1-modules==0.4.2",
     "pycparser==2.22",
