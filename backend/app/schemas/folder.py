@@ -32,3 +32,7 @@ class FolderMetadata(BaseModel):
     description: Optional[str] = ''
     keywords: list[str]
     urlPatterns: list[str]
+
+
+class RemoveContentPayload(BaseModel):
+    content_ids: list[str]

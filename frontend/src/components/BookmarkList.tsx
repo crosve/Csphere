@@ -26,9 +26,9 @@ export default function BookmarkList({
 }: {
   items: Bookmark[];
   isFolder: boolean;
-  selectionMode: boolean;
-  selectedBookmarks: Set<string>;
-  onToggleSelect: (id: string) => void;
+  selectionMode?: boolean;
+  selectedBookmarks?: Set<string>;
+  onToggleSelect?: (id: string) => void;
 }) {
   const viewMode = useContext(LayoutContext);
 
@@ -45,7 +45,7 @@ export default function BookmarkList({
           : "grid-cols-1"
       }`}
     >
-      {isFolder
+      {isFolder === true
         ? items.map((item) => {
             const selected = selectedBookmarks.has(item.content_id);
             return (
@@ -61,10 +61,6 @@ export default function BookmarkList({
         : items.map((item) => (
             <BookmarkCard key={item.content_id} bookmark={item} />
           ))}
-
-      {/* {items.map((item) => (
-        <BookmarkCard key={item.content_id} bookmark={item} />
-      ))} */}
     </div>
   );
 }

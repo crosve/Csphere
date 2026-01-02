@@ -17,12 +17,13 @@ function FolderSelectionTab({
   return (
     <div
       className={cn(
-        "w-full flex flex-row space-x-6 items-start h-auto p-2 rounded-2xl bg-gray-300"
+        "w-full flex flex-row space-x-6 items-start h-auto p-2 rounded-2xl bg-gray-300 shadow-sm"
       )}
     >
-      {selectionItems.map((item) => {
+      {selectionItems.map((item, index) => {
         return (
           <Button
+            key={index}
             onClick={() => {
               setSelectedAction(item);
               handleSelectedAction(item);

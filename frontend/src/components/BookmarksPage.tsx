@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import BookmarkLayout from "@/app/(content)/home/BookmarkLayout";
 import CategoryFilter from "./CategoryFilter";
 import Loading from "./ux/Loading";
+import { list } from "postcss";
 
 type ChildProps = {
   activeTab?: string;
@@ -16,10 +17,24 @@ interface Tags {
   category_name: string;
 }
 
+interface Tag {
+  category_id: string;
+  category_name: string;
+}
+
+type Bookmark = {
+  content_id: string;
+  title?: string;
+  source?: string;
+  ai_summary?: string;
+  url: string;
+  tags?: Tag[];
+};
+
 const BookmarksPage: React.FC<ChildProps> = ({ activeTab }) => {
   //Make a type for the bookmarks later
   const [originalBookmarks, setOriginalBookmarks] = useState([]);
-  const [bookmarks, setBookmarks] = useState([]);
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
 
   const [categories, setCategories] = useState<Tags[]>([]);
   const [choosenCategories, setChoosenCategories] = useState<string[]>([]);
@@ -195,7 +210,7 @@ const BookmarksPage: React.FC<ChildProps> = ({ activeTab }) => {
         setChoosenCategories={setChoosenCategories}
       />
       <Suspense fallback={<Loading />}>
-        <BookmarkList items={bookmarks} />
+        <BookmarkList items={bookmarks} isFolder={false} />
       </Suspense>{" "}
       {!hasNext.current && (
         <h1 className="text-center">

@@ -16,6 +16,8 @@ from exceptions.bucket_excpetions import FoldersNotFound, ItemExistInFolder, Emb
 from schemas.folder_schemas import FolderBucketData
 from schemas.content_schemas import ContentPayload
 
+from sqlalchemy.orm import Session
+
 from rapidfuzz import fuzz
 
 # Using pgvector specific functions if available in your SQLAlchemy setup
@@ -24,8 +26,8 @@ from sqlalchemy import func
 logger = logging.getLogger(__name__)
 
 class BucketProcessor(BaseProcessor):
-    def __init__(self, content_embedding: list[float] = None):
-        super().__init__()
+    def __init__(self, db : Session, content_embedding: list[float] = None):
+        super().__init__(db=db)
         self.content_embedding = content_embedding
         self.user_id = None
 

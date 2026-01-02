@@ -481,19 +481,47 @@ export default function Page({
     setFolderMetadata(metadata);
   };
 
-  const handleSelectedAction = (action: string) => {
+  const handleSelectedAction = async (action: string) => {
     try {
-      console.log("all selected bookmarks: ", selectedBookmarks);
-      if (action === "remove") {
-        console.log("handling remove logic!");
-      } else {
-        alert("Unsupported action right now ");
+      if (selectedBookmarks.size === 0) {
+        alert("No bookmarks selected!");
+        return;
       }
-    } catch (e) {
-      console.log(
-        "An error occured when trying to handle the selected action",
-        e
-      );
+
+      if (action === "remove") {
+        const token = fetchToken();
+
+        const contentIds = Array.from(selectedBookmarks);
+
+        const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/folder/${folderId}/content`;
+
+        const res = await fetch(API_URL, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ content_ids: contentIds }),
+        });
+
+        if (!res.ok) {
+          throw new Error("Failed to delete bookmarks");
+        }
+
+        const data = await res.json();
+
+        if (data.status === "success") {
+          setBookmarks((prev) =>
+            prev.filter(
+              (bookmark) => !selectedBookmarks.has(bookmark.content_id)
+            )
+          );
+
+          setSelectedBookmarks(new Set());
+        }
+      }
+    } catch (err) {
+      console.error("Failed to handle selected action:", err);
     } finally {
       setSelectedAction("");
     }

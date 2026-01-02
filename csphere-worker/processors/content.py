@@ -1,6 +1,7 @@
 from .base import BaseProcessor
 import logging
 from data_models.content import Content
+from sqlalchemy.orm import Session
 
 from datetime import datetime, timezone
 from data_models.content_item import ContentItem
@@ -16,8 +17,8 @@ logger = logging.getLogger(__name__)
 class ContentProcessor(BaseProcessor):
 
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, db:Session):
+        super().__init__(db=db)
 
 
     def process(self, message: dict) -> str:

@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.dependencies import get_current_user_id
 from app.data_models.folder import Folder
@@ -10,11 +10,11 @@ from app.data_models.content import Content
 from app.data_models.content_item import ContentItem
 from app.data_models.content_ai import ContentAI
 
-from app.services.folder import update_folder_metadata, create_user_folder, addItemToFolder
+from app.services.folder import update_folder_metadata, create_user_folder, addItemToFolder, remove_contents_from_folder
 
 from app.db.database import get_db
-from app.schemas.folder import  FolderDetails, FolderItem, FolderMetadata
-from app.exceptions.folder import FolderNotFound
+from app.schemas.folder import  FolderDetails, FolderItem, FolderMetadata, RemoveContentPayload
+from app.exceptions.folder import FolderNotFound, FolderItemNotFound
 
 from app.utils.hashing import get_current_user_id
 from datetime import datetime
@@ -307,3 +307,41 @@ def deleteFolder(folder_id: UUID, user_id: UUID=Depends(get_current_user_id), db
 
         return {'success' : False, 'message' : str(e)}
         
+
+
+
+@router.delete("/folder/{folder_id}/content")
+def delete_content_from_folder(
+    folder_id: UUID,
+    payload: RemoveContentPayload,
+    user_id: UUID = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    if not payload.content_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="content_ids list cannot be empty",
+        )
+
+    try:
+        return remove_contents_from_folder(
+            db=db,
+            folder_id=folder_id,
+            user_id=user_id,
+            content_ids=payload.content_ids,
+        )
+
+    except FolderNotFound:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Folder not found",
+        )
+
+    except FolderItemNotFound:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No matching content found in folder",
+        )
+    
+
+

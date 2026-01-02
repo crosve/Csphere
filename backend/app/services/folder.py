@@ -14,20 +14,13 @@ from app.embeddings.embedding_manager import ContentEmbeddingManager
 from typing import Optional
 from app.data_models.folder_item import folder_item
 
+from app.exceptions.folder import FolderNotFound, DuplicateFolder, FolderEmbeddingError, FolderItemNotFound
+
 import numpy as np
 import logging
 
 logger = logging.getLogger(__name__) 
 
-
-class FolderNotFound(Exception):
-    pass
-
-class DuplicateFolder(Exception):
-    pass
-
-class FolderEmbeddingError(Exception):
-    pass
 
 def update_folder_metadata(
     *,
@@ -304,4 +297,104 @@ def _update_folder_embedding( db: Session,folder: Folder) -> Optional[list[float
         logging.exception("Failed to create folder embedding")
         return None
 
+
+def get_folder_or_404(db: Session, folder_id: UUID) -> Folder:
+    folder = (
+        db.query(Folder)
+        .filter(Folder.folder_id == folder_id)
+        .first()
+    )
+    if not folder:
+        raise FolderNotFound()
+    return folder
+
     
+def _penalize_folder_learning(db: Session, folder_id: str, content_id: str):
+    """
+    Moves the folder embedding AWAY from the content embedding.
+    Used when a user manually removes an item they feel was misclassified.
+    """
+    try:
+        folder = db.query(Folder).filter(Folder.folder_id == folder_id).first()
+        content_embedding = get_content_embedding(db, content_id)
+
+        if folder is None or folder.folder_embedding is None or content_embedding is None:
+            return False
+
+        current_vec = np.array(folder.folder_embedding)
+        removed_vec = np.array(content_embedding)
+
+        # PENALIZATION RATE (Beta)
+        # We use a smaller rate so one removal doesn't ruin the whole folder
+        beta = 0.15
+
+        # Vector Subtraction: Move current_vec away from removed_vec
+        # New = Current - Beta * (Removed - Current)
+        updated_vec = current_vec - beta * (removed_vec - current_vec)
+
+        # Re-normalize to keep it a valid unit vector for cosine similarity
+        norm = np.linalg.norm(updated_vec)
+        if norm > 0:
+            updated_vec = updated_vec / norm
+
+        # Save the "corrected" identity
+        folder.folder_embedding = updated_vec.tolist()
+        
+        
+        db.commit()
+        logger.info(f"Folder {folder_id} penalized. Moved away from content {content_id}.")
+        return True
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Failed to penalize folder: {e}")
+        return False
+
+def remove_contents_from_folder(
+    db: Session,
+    folder_id: UUID,
+    user_id: UUID,
+    content_ids: list[str],
+):
+    if not content_ids:
+        return {"status": "success", "removed": 0}
+
+    try:
+        get_folder_or_404(db, folder_id)
+
+        deleted_count = (
+            db.query(folder_item)
+            .filter(
+                folder_item.folder_id == folder_id,
+                folder_item.user_id == user_id,
+                folder_item.content_id.in_(content_ids),
+            )
+            .delete(synchronize_session=False)
+        )
+
+        if deleted_count == 0:
+            raise FolderItemNotFound("No matching content found in folder")
+
+        db.commit()
+
+        #Penalize the learning vector 
+        #Later in the future make a vectore status to compare content with a vector of 
+        #contents that has been removed in the past
+        logging.info('Penalizing folder with the removed data')
+        for content_id in content_ids:
+            _penalize_folder_learning(db=db, folder_id=folder_id, content_id=content_id)
+
+        return {
+            "status": "success",
+            "removed": deleted_count,
+        }
+
+    except Exception as e:
+        db.rollback()
+        logging.error(
+            f"Failed to remove content from folder {folder_id}: {e}",
+            exc_info=True,
+        )
+        raise
+
+

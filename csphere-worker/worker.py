@@ -17,6 +17,20 @@ from processors.bucket import BucketProcessor
 from processors.content import ContentProcessor
 from schemas.content_schemas import MessageSchema
 
+from contextlib import contextmanager
+
+from database import get_db, SessionLocal
+
+@contextmanager
+def get_db_connection():
+    db = SessionLocal()
+    try:
+        yield db
+
+    finally:
+        db.close()
+
+
 #Logging config stuff
 logging.basicConfig(
     level=logging.DEBUG,   
@@ -29,38 +43,24 @@ logger.debug("This will show in the terminal")
 load_dotenv()
 
 
-
-
-    # payload = {
-    #     "content_payload": {
-    #         "url": url,
-    #         "title": title,
-    #         "source": source,
-    #         "first_saved_at": utc_time.isoformat(),
-    #     },
-    #     "raw_html": html[0:50],
-    #     "user_id": str(user_id),
-    #     "notes": notes,
-    #     "folder_id": str(folder_id) if folder_id else None,
-    # }
-
-
 def handle_message(message : dict, pydantic_message : MessageSchema):
 
     #
     try:
-        print('here 1')
-        messageProcessor : ContentProcessor = get_processor('process_message')
-        logging.info("got the processor")
-        content_id : str = messageProcessor.process(message=message)
 
-        print('here')
+        with get_db_connection() as db:
+            print('here 1')
+            messageProcessor : ContentProcessor = get_processor('process_message', db )
+            logging.info("got the processor")
+            content_id : str = messageProcessor.process(message=message)
 
-        #only process if there is no folder id
-        if content_id != '' and pydantic_message.folder_id == 'default':
-            logging.info('processing the content for folders')
-            bucketProcessor : BucketProcessor = get_processor('process_folder')
-            bucketProcessor.process(message=message, content_id=content_id)
+            print('here')
+
+            #only process if there is no folder id
+            if content_id != '' and pydantic_message.folder_id == 'default':
+                logging.info('processing the content for folders')
+                bucketProcessor : BucketProcessor = get_processor('process_folder', db=db)
+                bucketProcessor.process(message=message, content_id=content_id)
 
     except Exception as e:
         logging.error(f"Failed to fully process message: {e}")

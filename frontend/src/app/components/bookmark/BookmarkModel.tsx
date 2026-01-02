@@ -71,7 +71,7 @@ export function BookmarkDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[1000px] sm:max-w-none max-h-[100vh] bg-gray-300 p-2 flex flex-col">
+      <DialogContent className="w-[1000px] sm:max-w-none max-h-[100vh] bg-gray-300 p-2 flex flex-col wrap-break-word">
         <DialogHeader className="p-6 pb-4 ">
           <div className="flex items-start gap-4">
             {bookmark.url ? (

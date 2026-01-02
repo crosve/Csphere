@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-
+from sqlalchemy.orm import Session
 from database import get_db
 import logging
 from data_models.content import Content
@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 
 class BaseProcessor(ABC):
 
-    def __init__(self):
-        self.db = self.get_db()
+    def __init__(self, db : Session):
+        self.db = db
         self.embedding_manager = ContentEmbeddingManager(self.db)
 
 
