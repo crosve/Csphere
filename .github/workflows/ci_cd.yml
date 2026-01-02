@@ -58,3 +58,26 @@ jobs:
               ./build-csphere-backend.sh
               echo "deployment was a success"
             ' <<< "${{secrets.PASSWORD}}"
+  deploy-worker:
+    name: deploy worker to the backend servers
+    runs-on: ununtu-latest
+
+    steps:
+      - name: Execute remote ssh commands
+        uses: appleboy/ssh-action@v1
+
+        with:
+          host: ${{secrets.HOST}}
+          username: ${{secrets.USERNAME}}
+          password: ${{secrets.PASSWORD}}
+          port: ${{secrets.PORT}}
+
+          script: |
+            echo "Starting deployment process"
+            # NOTE: Use 'sh' to avoid issues with inline script quoting
+            sudo -S bash -c '
+              cd /root/docker/csphere
+              #run the deployment script 
+              ./build-csphere-worker.sh
+              echo "deployment was a success"
+            ' <<< "${{secrets.PASSWORD}}"

@@ -19,56 +19,60 @@ def fetch_content(url):
         return None
 
 
-def handle_existing_content(existing_content, user_id: str, db, notes : str, folder_id) -> bool:
-
+def handle_existing_content(existing_content, user_id: str, db, notes: str, folder_id: str) -> bool:
     try:
+        utc_now = datetime.now(timezone.utc)
+        content_id = existing_content.content_id
+
 
         existing_item = db.query(ContentItem).filter(
             ContentItem.user_id == user_id,
-            ContentItem.content_id == existing_content.content_id
+            ContentItem.content_id == content_id
         ).first()
 
-
-        utc_time = datetime.now(timezone.utc)
-
         if not existing_item:
-
             new_item = ContentItem(
                 user_id=user_id,
-                content_id=existing_content.content_id,
-                saved_at=utc_time,  
+                content_id=content_id,
+                saved_at=utc_now,  
                 notes=notes,
                 read=False
             )
             db.add(new_item)
-            db.commit()
+        else:
+            existing_item.notes = notes
+            existing_item.saved_at = utc_now
 
-            saved_item = db.query(ContentItem).order_by(ContentItem.saved_at.desc()).first()
-            logging.info(f"Retrieved from DB: {saved_item.saved_at}")
-         
-            #add to the corresponding folder if any 
 
-            if folder_id and folder_id != '' and folder_id != 'default':
+        if folder_id and folder_id not in ['', 'default', 'none']:
+            
+       
+            already_in_folder = db.query(folder_item).filter(
+                folder_item.folder_id == folder_id,
+                folder_item.content_id == content_id,
+                folder_item.user_id == user_id
+            ).first()
 
-                new_item = folder_item(
-                    folder_item_id = uuid4(), 
-                    folder_id = folder_id,
-                    user_id = user_id, 
-                    content_id = existing_content.content_id,
-                    added_at = datetime.utcnow()
-
+            if not already_in_folder:
+                new_folder_link = folder_item(
+                    folder_item_id=uuid4(), 
+                    folder_id=folder_id,
+                    user_id=user_id, 
+                    content_id=content_id,
+                    added_at=utc_now
                 )
-
-                db.add(new_item)
-                # db.commit()
-                # db.refresh(new_item)
+                db.add(new_folder_link)
+                logging.info(f"Assigned content {content_id} to folder {folder_id}")
             else:
-                logging.info("no valid fodler id found so skipping this part")
-                
-        logging.info("Successfully saved content for user.")
+                logging.info(f"Content {content_id} is already in folder {folder_id}, skipping link creation.")
+
+
+        db.commit()
+        logging.info("Successfully processed existing content and folder assignment.")
         return True
 
-
     except Exception as e:
-        logging.error("Issue occurred: ", str(e))
-        return False 
+        db.rollback() # Roll back changes if any part of the save fails
+        logging.error(f"Issue occurred in handle_existing_content: {str(e)}")
+        return False
+    

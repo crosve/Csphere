@@ -215,6 +215,8 @@ export default function SignupForm() {
         onSuccess={(credentials) => googleSignUp(credentials)}
         onError={() => toast.error("Failed to signup with google.")}
         text="signup_with"
+        width="350px"
+        shape="pill"
       />
 
       <div className="text-center text-gray-400 mt-4">

@@ -19,3 +19,20 @@ class FolderCreate(BaseModel):
 class FolderItem(BaseModel):
     folderId: str
     contentId: str
+
+
+ #   name: string;
+#   keywords: string[];
+#   urlPatterns: string[];
+#   smartBucketingEnabled: boolean;   
+
+class FolderMetadata(BaseModel):
+    name: str
+    smartBucketingEnabled: bool
+    description: Optional[str] = ''
+    keywords: list[str]
+    urlPatterns: list[str]
+
+
+class RemoveContentPayload(BaseModel):
+    content_ids: list[str]

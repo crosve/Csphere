@@ -24,11 +24,11 @@ function LogoComponent() {
           </div>
         </div>
       </Link>
-      <nav className="hidden md:flex md:items-center md:space-x-6">
+      {/* <nav className="hidden md:flex md:items-center md:space-x-6">
         <Link href="/chrome-setup" className="text-sm">
           Chrome setup
         </Link>
-      </nav>
+      </nav> */}
     </>
   );
 }

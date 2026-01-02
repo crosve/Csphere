@@ -153,6 +153,10 @@ def save_content_by_url(content: ContentSavedByUrl, user: User = Depends(get_cur
     try:
         safe_url = ensure_safe_url(content.url)
 
+        html = ''
+
+        title =safe_url    
+
         _enqueue_new_content(
             url=safe_url,
             title=None, 
@@ -182,6 +186,8 @@ def get_unread_count(user_id: UUID = Depends(get_current_user_id), db: Session =
     except Exception as e:
         logger.error(f"Error occured in count api router: {e}")
         return {'status' : 'unsuccesfull', 'error' : str(e)}
+
+
 
 
 @router.get("/content/unread", response_model=UserSavedContentResponse)

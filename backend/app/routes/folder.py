@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.dependencies import get_current_user_id
 from app.data_models.folder import Folder
@@ -10,8 +10,11 @@ from app.data_models.content import Content
 from app.data_models.content_item import ContentItem
 from app.data_models.content_ai import ContentAI
 
+from app.services.folder import update_folder_metadata, create_user_folder, addItemToFolder, remove_contents_from_folder
+
 from app.db.database import get_db
-from app.schemas.folder import  FolderDetails, FolderItem
+from app.schemas.folder import  FolderDetails, FolderItem, FolderMetadata, RemoveContentPayload
+from app.exceptions.folder import FolderNotFound, FolderItemNotFound
 
 from app.utils.hashing import get_current_user_id
 from datetime import datetime
@@ -73,6 +76,61 @@ def get_folder_path(folder_id: UUID, user_id: UUID=Depends(get_current_user_id),
     return {"path": path}
 
 
+@router.get('/folder/metadata/{folder_id}')
+def get_folder_metadata(folder_id : str, db: Session = Depends(get_db)):
+
+    try:
+        folder : Folder = db.query(Folder).filter(Folder.folder_id ==folder_id ).first()
+        if not folder:
+            return {'success' : False, 'message' : 'No folder found for this folder id '}
+        
+        payload = {
+            "name" : folder.folder_name if not None else '', 
+            "keywords" : folder.keywords if not None else [],
+            "urlPatterns" : folder.url_patterns if not None else [], 
+            "description" : folder.description if not None else '',
+            "smartBucketingEnabled" : folder.bucketing_mode if not None else False
+
+        }
+
+        return {'success'  : True, 'message': 'Data fetched successfully', 'data' : payload }
+
+
+    except Exception as e:
+        logging.error(f"Error occured trying to fet folder metadata: {e} ")
+
+
+from sqlalchemy.exc import SQLAlchemyError
+
+
+@router.put("/folder/{folder_id}")
+def process_folder_metadata(
+    folder_id: UUID,
+    metadata: FolderMetadata,
+    user_id: UUID = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    try:
+        logging.info(f"Folder metdata being processed: {metadata}")
+        folder = update_folder_metadata(
+            db=db,
+            folder_id=folder_id,
+            user_id=user_id,
+            metadata=metadata,
+        )
+        return {"success": True, "folder_id": folder.folder_id}
+
+    except FolderNotFound:
+        raise HTTPException(status_code=404, detail="Folder not found")
+    
+
+
+
+
+    
+
+
+
 
 
 @router.get("/folder/{folder_id}")
@@ -113,31 +171,18 @@ def get_folder_items(
 @router.post("/users/folder/add")
 def add_to_folder(itemDetails: FolderItem, user_id: UUID=Depends(get_current_user_id), db: Session = Depends(get_db)):
 
-    #make sure item isn't already in the DB
-
-    present = db.query(folder_item).filter(itemDetails.contentId == folder_item.content_id, itemDetails.folderId == folder_item.folder_id, user_id == folder_item.user_id).first()
-
-    if present:
-        raise HTTPException(status_code=400, detail="Item already in the folder")
-    
     try:
-        new_item = folder_item(
-            folder_item_id = uuid4(), 
-            folder_id = itemDetails.folderId,
-            user_id = user_id, 
-            content_id = itemDetails.contentId,
-            added_at = datetime.utcnow()
 
-        )
+        res = addItemToFolder(db=db, user_id=user_id, folder_id=itemDetails.folderId, itemDetails=itemDetails)
+        if res.get('success', False):
+            logging.info(f'Succesfully inserted item to folder')
+        else:
+            logging.warning(f"Something went wrong, Check out the logic ")
 
-        db.add(new_item)
-        db.commit()
-        db.refresh(new_item)
-
-        return {'success' : True, 'message' : 'Bookmark added to folder'} 
-
+        return res
 
     except Exception as e:
+        logging.error(f"Error occured trying to add the item to the folder: {e}")
         return {'success': False, 'message' : str(e)} 
     
 
@@ -170,48 +215,64 @@ def get_users_folders( user_id: UUID=Depends(get_current_user_id), db: Session =
 #Edit the api endpoint protocol later
 @router.post("/user/folder/create")
 def create_folder(folderDetails: FolderDetails, user_id: UUID=Depends(get_current_user_id), db: Session = Depends(get_db)):
-    print("folder details: ", folderDetails)
 
-    #check for existing folders with the same name under the same user_id
-    duplicates = db.query(Folder).filter(
-    Folder.user_id == user_id,
-    Folder.folder_name == folderDetails.foldername
-        ).all()
-    print(f"Found {len(duplicates)} folders with same name and user.")
-
-    if duplicates:
-        print("folder already exists: ", duplicates)
-        raise HTTPException(status_code=400, detail="Folder already exists") 
-    
-    folder_uuid = uuid4()
-    
     try:
-        new_folder = Folder(
-            folder_id = folder_uuid,
-            user_id= user_id, 
-            parent_id = folderDetails.folderId if folderDetails.folderId else folder_uuid,
-            folder_name = folderDetails.foldername,
-            created_at=datetime.utcnow() 
-        )
-        db.add(new_folder)
-        db.commit()
-        db.refresh(new_folder)
-        
+        folder_creation_details = create_user_folder(db=db, folderDetails=folderDetails, user_id=user_id)
 
-        folder_details = {
-            'folder_id' : new_folder.folder_id,
-            'created_at' : new_folder.created_at, 
-            'folder_name' : new_folder.folder_name,
-            'parent_id' : new_folder.parent_id,
-            'file_count' : 0
-
-        }
-
-        return {'success' : True, 'message' : 'folder created successfully', 'folder_details': folder_details}
+        return folder_creation_details
 
 
     except Exception as e:
-        return {'success' : False, 'message' : str(e)}
+        logging.error(f"failed to create user folder: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to create folder: {e}")
+
+    # print("folder details: ", folderDetails)
+
+    # #check for existing folders with the same name under the same user_id
+    # duplicates = db.query(Folder).filter(
+    # Folder.user_id == user_id,
+    # Folder.folder_name == folderDetails.foldername
+    #     ).all()
+    # print(f"Found {len(duplicates)} folders with same name and user.")
+
+    # if duplicates:
+    #     print("folder already exists: ", duplicates)
+    #     raise HTTPException(status_code=400, detail="Folder already exists") 
+    
+    # folder_uuid = uuid4()
+    
+    # try:
+    #     new_folder = Folder(
+    #         folder_id = folder_uuid,
+    #         user_id= user_id, 
+    #         parent_id = folderDetails.folderId if folderDetails.folderId else folder_uuid,
+    #         folder_name = folderDetails.foldername,
+    #         bucketing_mode = False, 
+    #         keywords = [], 
+    #         url_patterns = [],
+    #         description='',
+    #         created_at=datetime.utcnow() 
+    #     )
+    #     db.add(new_folder)
+    #     db.commit()
+    #     db.refresh(new_folder)
+        
+
+    #     folder_details = {
+    #         'folder_id' : new_folder.folder_id,
+    #         'created_at' : new_folder.created_at, 
+    #         'folder_name' : new_folder.folder_name,
+    #         'parent_id' : new_folder.parent_id,
+    #         'file_count' : 0
+
+    #     }
+
+    #     return {'success' : True, 'message' : 'folder created successfully', 'folder_details': folder_details}
+
+
+    # except Exception as e:
+    #     logging.error(f"Failed to create folder for user: {e}")
+    #     return {'success' : False, 'message' : str(e)}
 
 
 @router.delete("/folder/{folder_id}")
@@ -246,3 +307,41 @@ def deleteFolder(folder_id: UUID, user_id: UUID=Depends(get_current_user_id), db
 
         return {'success' : False, 'message' : str(e)}
         
+
+
+
+@router.delete("/folder/{folder_id}/content")
+def delete_content_from_folder(
+    folder_id: UUID,
+    payload: RemoveContentPayload,
+    user_id: UUID = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    if not payload.content_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="content_ids list cannot be empty",
+        )
+
+    try:
+        return remove_contents_from_folder(
+            db=db,
+            folder_id=folder_id,
+            user_id=user_id,
+            content_ids=payload.content_ids,
+        )
+
+    except FolderNotFound:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Folder not found",
+        )
+
+    except FolderItemNotFound:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No matching content found in folder",
+        )
+    
+
+
