@@ -78,20 +78,24 @@ class ContentEmbeddingManager:
 
             # Enrich the content by parsing the raw_html. If getting the html fails, default the summary_input to title
             #add in raw html to the enrich content function 
-            summary_input = self._enrich_content(content.url, content.content_id, self.db, raw_html)
+            summary_input, content_title = self._enrich_content(content.url, content.content_id, self.db, raw_html)
             if not summary_input:
-                summary_input = content.title or "No title avaliable"
+                summary_input = content_title or "No title avaliable"
 
 
             # Use LLM to summarize the content
-            summary, categories = self._summarize_content(summary_input) 
-            if not summary: 
+            result = self._summarize_content(summary_input)
+            if not result:
+                return None
+            summary, categories = result
+            if not summary:
                 raise Exception("Failed to summarize content and/or there is no title")
             
             self.ai_summary = summary
-            
-        
 
+            if not content.title and content_title:
+                content.title = content_title
+                
             #Now create categories that are not yet in the DB
             category_set = set()
             db = self.db
@@ -137,12 +141,12 @@ class ContentEmbeddingManager:
             )
 
             self.db.add(content_ai)
-            self.db.commit()
             return content_ai
         
-        
+        except SQLAlchemyError as e:
+            # Let the caller manage transaction rollback
+            raise
         except Exception as e:
-            self.db.rollback()
             print(f"[ContentEmbeddingManager] failed to process content: {e}")
             return None
         
@@ -197,11 +201,11 @@ class ContentEmbeddingManager:
             metadata["body_text"] = self._clean_text(metadata["body_text"])
 
             summary_input = self._build_summary_input(metadata)
-            return summary_input    
+            return summary_input, metadata["title"]   
 
         except Exception as e:
             print(f"Error enriching content from {url}: {e}")
-            return None
+            return None, None
 
 
     def _generate_embedding(self, text):
@@ -252,7 +256,6 @@ class ContentEmbeddingManager:
         doc = Document(html)
         # html snippet of main content body with boilerplate (nav bars, ads, footers) removed
         body = BeautifulSoup(doc.summary(), "html.parser").get_text()
-
 
         return {
             "title": title,

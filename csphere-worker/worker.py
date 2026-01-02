@@ -76,7 +76,13 @@ def poll_and_process():
     ACTIVEMQ_USER= os.getenv('ACTIVEMQ_USER')
     ACTIVEMQ_PASS= os.getenv('ACTIVEMQ_PASS')
 
-    queue_url = f"{ACTIVEMQ_URL}/api/message/{quote(ACTIVEMQ_QUEUE)}?type=queue&oneShot=true"
+    # ACTIVEMQ_URL='http://feeltiptop.com:8161/' 
+    # ACTIVEMQ_QUEUE='CSPHEREQUEUETEST' 
+    # ACTIVEMQ_USER='admin'
+    # ACTIVEMQ_PASS='tiptop'
+
+
+    queue_url = f"{ACTIVEMQ_URL}/api/message/{ACTIVEMQ_QUEUE}?type=queue&oneShot=true"
 
     while True:
         logging.info(f"Queue URL: {queue_url}")

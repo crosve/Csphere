@@ -4,12 +4,19 @@ from data_models.folder_item import folder_item
 from data_models.content_ai import ContentAI
 
 import logging
-
+import requests
 from datetime import datetime, timezone
 from uuid import uuid4
 
 
-
+def fetch_content(url):
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        return response.text
+    except Exception as e:
+        print(f"Error fetching {url}: {e}")
+        return None
 
 
 def handle_existing_content(existing_content, user_id: str, db, notes: str, folder_id: str) -> bool:
