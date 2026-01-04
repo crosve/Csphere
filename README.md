@@ -1,100 +1,146 @@
-<img src="https://github.com/angvit/Content-Rediscovery-Platform/blob/main/frontend/public/cspherelogo2.png?raw=true" alt="logo" width="350" height="200"/>
+<h1 align="center">Csphere</h1>
 
-<h1>Rediscover what matters — faster.</h1>
+<p align="center">
+  <a href="https://chromewebstore.google.com/detail/csphere/naacmldkjnlfmhnkbbpppjpmdoiednnn">
+    <img
+      src="https://img.shields.io/badge/Chrome-Install-blue?logo=googlechrome"
+      alt="Install Csphere on Chrome"
+    />
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://addons.mozilla.org/en-US/firefox/addon/csphere">
+    <img
+      src="https://img.shields.io/badge/Firefox-Install-orange?logo=firefoxbrowser"
+      alt="Install Csphere on Firefox"
+    />
+  </a>
+</p>
 
+<hr />
 
+<p>
+  Short for “content sphere”,
+  <a href="https://www.csphere.io/">Csphere.io</a> is a bookmark management application
+  and browser extension that allows users to easily save, search, and organize the
+  web content they consume.
+</p>
 
+<h2>Features</h2>
 
-A full-stack web app and browser extension that helps users **save**, **summarize**, and **search** web content using **embeddings** and **ai-generated summaries**. 
+<ul>
+  <li>Save different forms of web content (e.g. articles, blogs, documentation)</li>
+  <li>Add context via notes, descriptions, and custom keyword tags</li>
+  <li>Organize content using a custom folder structure managed through Csphere’s backend UI</li>
+  <li>
+    Semantically search your content by meaning, time saved, or source
+    <br />
+    <em>(e.g. “Which articles have I read about jet engines this past month?”)</em>
+  </li>
+  <li>Cross-platform access across browsers and mobile devices</li>
+</ul>
 
-**Live App**: [https://www.csphere.io/]
+<hr />
 
----
+<h2>Local Setup Guide</h2>
 
-# Chrome Extension Download
+<p>
+  <strong>Note:</strong> This project uses
+  <a href="https://github.com/astral-sh/uv">uv</a> for Python dependency and virtual
+  environment management. All Python commands below assume 
+  <code>uv</code> is installed and active.
+</p>
 
-#### 1. Downonload the zipped folder from this link: [download](https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2Fcrosve%2FCsphere%2Ftree%2Fmain%2Fchrome_extension)
-#### 2. Extract the folder.
-#### 3. Go to `chrome://extensions/` in Chrome.
-#### 4.  Enable **Developer mode**.
-#### 5. Click **"Load unpacked"** and select the extracted folder.
+<h3>1. Backend (Python + FastAPI)</h3>
 
-## Local Setup
-
-### 1. Backend (Python + FastAPI)
-
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate (for windows: source venv/scripts/Activate )
-pip install -r requirements.txt
+<pre><code>cd backend
+uv venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+uv pip install -r requirements.txt
 uvicorn app.api.main:app --reload
-```
-
-API general structure 
-```bash
-/<resource-prefix>/<resource-id>/<sub-resource>?<query-params>
-```
+</code></pre>
 
 
-### 2. Frontend (Next.js)
+<h3>2. Frontend (Next.js)</h3>
 
-```bash
-cd frontend
+<pre><code>cd frontend
 npm install
 npm run dev
-```
+</code></pre>
 
-### 3. Chrome Extension
+<h3>3. Chrome Extension (Local)</h3>
 
-1. Load the `chrome_extension/` folder into Chrome via `chrome://extensions`
+<ol>
+  <li>Open <code>chrome://extensions</code></li>
+  <li>Enable <strong>Developer Mode</strong></li>
+  <li>Click <strong>Load Unpacked</strong></li>
+  <li>Select the <code>chrome_extension/</code> folder</li>
+</ol>
 
-2. Enable Developer Mode -> "Load Unpacked" -> Select `chrome_extension/`
+<hr />
 
+<h2>Alembic Setup – Database Migrations</h2>
 
-### Alembic Setup - Database Migrations 
+<h3>1. Install Alembic</h3>
 
-1. Install alembic
+<pre><code>uv pip install alembic</code></pre>
 
-```bash
-pip install alembic
-```
+<h3>2. Initialize Alembic</h3>
 
-2. Initialize Alembic at the root of the backend folder 
+<pre><code>alembic init</code></pre>
 
-```bash
-alembic init
-```
+<h3>3. Configure <code>alembic.ini</code></h3>
 
-3. Configure your alembic INI file
-set your sqlalchemy.url to your postgresql connector string
+<p>
+  Set <code>sqlalchemy.url</code> to your PostgreSQL connection string.
+</p>
 
+<h3>4. Set Target Metadata</h3>
 
-4. Set Target Metadata
-
-In alembic/env.py, update the target_metadata to use your SQLAlchemy models' metadata.
-
-For example, if you have a Base object defined in app/db/base.py:
-
-```bash
-from app.db.base import Base  # Adjust the path based on your project
+<pre><code>from app.db.base import Base
 target_metadata = Base.metadata
-```
+</code></pre>
 
-5. Create a Migration Script
-```bash
-alembic revision --autogenerate -m "create users table"
-```
-6. Apply  your migration to the database
+<h3>5. Create a Migration</h3>
 
-```bash
-alembic upgrade head
-```
+<pre><code>alembic revision --autogenerate -m "create users table"</code></pre>
 
--To Downgrade a migration run this command
+<h3>6. Apply Migration</h3>
 
-```bash
-alembic downgrade -1
-```
+<pre><code>alembic upgrade head</code></pre>
 
+<h3>Downgrade</h3>
+
+<pre><code>alembic downgrade -1</code></pre>
+
+<hr />
+
+<h2>Why Csphere?</h2>
+
+<p>
+The problem we identified is for someone who parses thousands of pages of web content daily and experiences trouble locating where this content was consumed, be it on a Chrome or Firefox browser. The user possibly has thousands of web pages already saved in their bookmarks folders and are looking for a more intelligent and context-rich search and storage over their content. 
+</p>
+
+<p>
+Install this if you are tired of having thousands of tabs open on your browser, debating if they should be saved with your important bookmarks or not. With Csphere you centralize and take control over the content you consume while organizing your desktop.
+</p>
+
+<h2>FAQ</h2>
+
+<h3>How do I pronounce Csphere?</h3>
+
+<p>
+  Csphere is pronounced as "see-sphere".
+</p>
+
+<h3>Can I start using Csphere now? </h3>
+
+<p>
+  Visit <a href="https://www.csphere.io/">Csphere.io</a> and download the extension to start using Csphere.
+</p>
+
+<h3>Is Csphere free?</h3>
+
+<p>
+  Yes, Csphere is 100% free to use.
+</p>
 
