@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from app.db.database import get_db
 from app.data_models.content import Content
 from app.data_models.content_item import ContentItem
@@ -33,6 +33,10 @@ from email.utils import quote
 import os
 from dotenv import load_dotenv
 
+from app.services.content_services import search_content
+
+from app.exceptions.content_exceptions import EmbeddingManagerNotFound, NoMatchedContent
+
 
 router = APIRouter(
     # prefix="/content"
@@ -42,41 +46,31 @@ logger = logging.getLogger(__name__)
 
 
 
-@router.get("/content/search", response_model=UserSavedContentResponse)
+@router.get("/content/search", response_model=UserSavedContentResponse, status_code=status.HTTP_200_OK)
 def search(query: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    manager = get_embedding_manager()
-    manager.db = db
 
-    parsed_query = QueryPreprocessor().preprocess_query(query)
+    try:
+        response_json = search_content(db=db, query=query, user=user )
+        return response_json
 
-    results = manager.query_similar_content(
-        query=parsed_query,
-        user_id=user.id
-    )
-
-    bookmark_data = []
-
-    for content_ai, content in results:
-        bookmark_data.append(
-            UserSavedContent(
-                content_id=content_ai.content_id,
-                title=content.title,
-                url=content.url,
-                source=content.source,
-                first_saved_at=content.first_saved_at,
-                ai_summary=content_ai.ai_summary,
-                notes="", 
-                tags=[]    
-            )
+    except EmbeddingManagerNotFound:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="AI search engine is currently offline or broken"
         )
-
-    logger.info(f"Data for search: {bookmark_data}")
-    return {
-        "bookmarks": bookmark_data,
-        "categories": [],  # or `None`, depending on how you define Optional
-        "has_next" : False
-    }
-
+    
+    except NoMatchedContent:
+        raise HTTPException(
+            status_code=status.HTTP_204_NO_CONTENT,
+            detail="No Matched content found for this search query"
+        )
+    except Exception as e:
+        logging.error(f"Search for query {query} failed. Error is as follows: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Search is currently unavailable, please try again"
+        )
+  
 
 
 def push_to_activemq(message: str):
@@ -306,7 +300,7 @@ def get_user_content(
     user_id: UUID = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
-    PAGE_SIZE = 10
+    PAGE_SIZE = 9
 
     if categories:
         categories = set(categories)
