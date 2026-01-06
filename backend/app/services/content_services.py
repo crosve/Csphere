@@ -1,29 +1,22 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
-from app.db.database import get_db
+from fastapi import HTTPException
 from app.data_models.content import Content
 from app.data_models.content_item import ContentItem
 from app.data_models.content_ai import ContentAI
 from app.data_models.folder_item import folder_item
 from app.data_models.folder import Folder
-from app.schemas.content import ContentCreate, ContentSavedByUrl, ContentWithSummary, UserSavedContent, DBContent, TabRemover, NoteContentUpdate, UserSavedContentResponse, CategoryOut
-from app.preprocessing.content_preprocessor import ContentPreprocessor
+from app.schemas.content import ContentWithSummary, UserSavedContent, TabRemover, NoteContentUpdate, CategoryOut
 from app.preprocessing.query_preprocessor import QueryPreprocessor
-from app.embeddings.embedding_manager import ContentEmbeddingManager
 from app.deps.services import get_embedding_manager
-from app.ai.categorizer import Categorizer
 from app.data_models.user import User
 from datetime import datetime, timezone
-from uuid import uuid4
 import logging
 from sqlalchemy.orm import joinedload
 from dateutil.parser import isoparse
 
-from app.utils.hashing import get_current_user_id
-from app.utils.user import get_current_user
-from app.utils.url import ensure_safe_url
+
 from sqlalchemy.orm import Session
 from uuid import UUID
-from sqlalchemy import desc, select 
+from sqlalchemy import desc 
 
 import requests 
 import json 
@@ -31,9 +24,8 @@ import json
 from email.utils import quote
 
 import os
-from dotenv import load_dotenv
 
-from app.exceptions.content_exceptions import EmbeddingManagerNotFound, NoMatchedContent, ContentItemNotFound, NotesNotFound
+from app.exceptions.content_exceptions import EmbeddingManagerNotFound, NoMatchedContent, ContentItemNotFound, NotesNotFound, ContentNotFound
 
 import logging
 
@@ -319,3 +311,124 @@ def update_note_service(*, data: NoteContentUpdate, user_id: UUID , db: Session)
 
 
 
+def tab_content(*, content: TabRemover,user_id: UUID , db: Session ):
+    content_id = content.content_id
+
+    query = db.query(Content).filter(
+        Content.content_id == content_id
+    )
+
+    DBcontent : Content = query.one_or_none()
+
+
+    if not DBcontent:
+        raise ContentItemNotFound(content_id=content_id)
+
+    #     raise HTTPException(
+    #     status_code=400,
+    #     detail="Content not found in the Contents table"
+    # )
+
+
+
+
+    existing_item : ContentItem = db.query(ContentItem).filter(
+        ContentItem.user_id == user_id,
+        ContentItem.content_id == DBcontent.content_id
+    ).first()
+
+    utc_time = datetime.now(timezone.utc)
+
+    if not existing_item:
+        new_item = ContentItem(
+            user_id=user_id,
+            content_id=DBcontent.content_id,
+            saved_at=utc_time,  
+            notes='' 
+        )
+        db.add(new_item)
+        db.commit()
+        
+
+    return {'success' : True}
+    
+  
+
+def untabContent(*, content: TabRemover,user_id: UUID , db : Session):
+
+    content_id_to_delete = content.content_id
+
+    # Construct the query to find the specific ContentItem to delete
+    query = db.query(ContentItem).filter(
+        ContentItem.user_id == user_id,
+        ContentItem.content_id == content_id_to_delete
+    )
+
+
+    deleted_row_count = query.delete(synchronize_session='fetch')
+
+    if deleted_row_count == 0:
+        raise ContentItemNotFound(content_id=content_id_to_delete)
+     
+    
+
+    db.commit()
+
+    return {
+        "message": "Content item successfully untabbed (deleted).",
+        "user_id": user_id,
+        "content_id": content_id_to_delete,
+        "deleted_count": deleted_row_count
+    }
+
+
+def delete_content(content_id: UUID, user_id: UUID, db: Session):
+
+
+    content = db.query(Content).filter(Content.content_id == content_id, Content.user_id == user_id).first()
+    if not content:
+        raise HTTPException(status_code=404, detail="Content not found or not owned by user")
+
+    
+    db.delete(content)
+    db.commit()
+    return {
+        'status' : 'success'
+    }
+
+
+def get_recent_saved_content(user_id : UUID, db : Session) -> list[ContentWithSummary]:
+
+    results = (
+        db.query(Content, Folder, ContentItem)
+        .join(ContentAI, ContentAI.content_id == Content.content_id)
+        .outerjoin(folder_item, folder_item.content_id == Content.content_id)
+        .join(ContentItem, ContentItem.content_id == Content.content_id)
+        .outerjoin(Folder, folder_item.folder_id == Folder.folder_id)
+        .filter(ContentItem.user_id == user_id)
+        .order_by(ContentItem.saved_at.desc())
+        .limit(10)
+        .all()
+    )
+
+    if not results:
+        raise ContentNotFound()
+
+
+    response = []
+    for content, folder, _ in results:
+        response.append(ContentWithSummary(
+            content_id=content.content_id,
+            title=content.title,
+            url=content.url,
+            source=content.source,
+            first_saved_at=content.first_saved_at,
+            ai_summary=content.content_ai.ai_summary if content.content_ai else None,
+            folder = folder.folder_name if  folder and folder.folder_name else 'none'
+        ))
+
+    logger.info(f"Recent content for user id {user_id} being returned: {response}")
+
+    return response
+
+    

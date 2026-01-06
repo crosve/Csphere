@@ -2,38 +2,23 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from app.db.database import get_db
 from app.data_models.content import Content
 from app.data_models.content_item import ContentItem
-from app.data_models.content_ai import ContentAI
-from app.data_models.folder_item import folder_item
-from app.data_models.folder import Folder
-from app.schemas.content import ContentCreate, ContentSavedByUrl, ContentWithSummary, UserSavedContent, DBContent, TabRemover, NoteContentUpdate, UserSavedContentResponse, CategoryOut
-from app.preprocessing.content_preprocessor import ContentPreprocessor
-from app.preprocessing.query_preprocessor import QueryPreprocessor
-from app.embeddings.embedding_manager import ContentEmbeddingManager
-from app.deps.services import get_embedding_manager
+from app.schemas.content import ContentCreate, ContentSavedByUrl, ContentWithSummary, TabRemover, NoteContentUpdate, UserSavedContentResponse
 from app.data_models.user import User
-from datetime import datetime, timezone
 import logging
-from sqlalchemy.orm import joinedload
-from dateutil.parser import isoparse
 
 from app.utils.hashing import get_current_user_id
 from app.utils.user import get_current_user
 from app.utils.url import ensure_safe_url
 from sqlalchemy.orm import Session
 from uuid import UUID
-from sqlalchemy import desc 
 
-import requests 
-import json 
+from app.services.content_services import (search_content,
+ _enqueue_new_content, get_total_unread_count,
+ get_unread_content_service, get_content_service, 
+ update_note_service, tab_content, untabContent,
+ delete_content, get_recent_saved_content)
 
-from email.utils import quote
-
-import os
-from dotenv import load_dotenv
-
-from app.services.content_services import search_content, _enqueue_new_content, get_total_unread_count, get_unread_content_service, get_content_service, update_note_service
-
-from app.exceptions.content_exceptions import EmbeddingManagerNotFound, NoMatchedContent, NotesNotFound
+from app.exceptions.content_exceptions import EmbeddingManagerNotFound, NoMatchedContent, NotesNotFound, ContentItemNotFound, ContentNotFound
 
 
 router = APIRouter(
@@ -208,96 +193,69 @@ def updatenote(data: NoteContentUpdate, user_id: UUID = Depends(get_current_user
         )
 
 
-@router.post("/content/tab")
+@router.post("/content/tab", status_code=200)
 def tab_user_content(content: TabRemover,user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
 
     try:
-        content_id = content.content_id
-
-        query = db.query(Content).filter(
-            Content.content_id == content_id
-        )
-
-        DBcontent = query.one_or_none()
-
-        if not DBContent:
-            raise HTTPException(
-            status_code=400,
-            detail="Content not found in the Contents table"
-        )
-
-
-        existing_item = db.query(ContentItem).filter(
-            ContentItem.user_id == user_id,
-            ContentItem.content_id == DBcontent.content_id
-        ).first()
-
-        utc_time = datetime.now(timezone.utc)
-
-        if not existing_item:
-            new_item = ContentItem(
-                user_id=user_id,
-                content_id=DBcontent.content_id,
-                saved_at=utc_time,  
-                notes='' 
-            )
-            db.add(new_item)
-            db.commit()
-
-        return {'success' : True}
+        return tab_content(content=content, user_id=user_id, db = db)
     
+    except ContentItemNotFound as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=404,
+            detail=str(e)
+        )
+
     except Exception as e:
-        print("error in the backend: ", e)
-        return {'success': False}
+        db.rollback()
+        logging.error(f"error in the backend: {e}")
+        raise HTTPException(
+            status_code=500, 
+            detail="An error occured when trying to tab the content for the user"
+
+        )
 
 
-    
 
-
-
-
-
-@router.post("/content/untab")
+@router.post("/content/untab", status_code=200)
 def untab_user_content(content: TabRemover,user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
-    #remove based on user_id and content_id
-    content_id_to_delete = content.content_id
+    try:
+        return untabContent(content=content, user_id=user_id, db=db)
 
-    # Construct the query to find the specific ContentItem to delete
-    query = db.query(ContentItem).filter(
-        ContentItem.user_id == user_id,
-        ContentItem.content_id == content_id_to_delete
-    )
-
-
-    deleted_row_count = query.delete(synchronize_session='fetch')
-
-    if deleted_row_count == 0:
-     
+    except ContentItemNotFound as e:
+        logging.error(f"Content item could not be untabbed because it was not found: {e}")
+        db.rollback()
         raise HTTPException(
             status_code=400,
-            detail="Content item not found for the specified user and content ID."
+            detail=str(e)
         )
 
-    db.commit()
 
-    return {
-        "message": "Content item successfully untabbed (deleted).",
-        "user_id": user_id,
-        "content_id": content_id_to_delete,
-        "deleted_count": deleted_row_count
-    }
+    except Exception as e:
+        db.rollback()
+        logging.error(f"Error occured trying to untab for user {user_id}: {e}")
 
+        raise HTTPException(
+            status_code=500,
+            detail="An error occured when trying to untab the users content. Try again in a little bit. "
+        )
+
+        
 
 
 @router.delete("/content/{content_id}", status_code=204)
-def delete_content(content_id: UUID, user_id: UUID, db: Session=Depends(get_db)):
-    content = db.query(Content).filter(Content.content_id == content_id, Content.user_id == user_id).first()
-    if not content:
-        raise HTTPException(status_code=404, detail="Content not found or not owned by user")
+def delete_content(content_id: UUID, user_id: UUID = Depends(get_current_user_id), db: Session=Depends(get_db)):
 
-    db.delete(content)
-    db.commit()
-    return
+    try:
+        return delete_content(content_id=content_id, user_id=user_id, db=db)
+
+    except Exception as e:
+        logging.error(f"Failed to delete content: {e}")
+        db.rollback()
+        HTTPException(
+            status_code=500,
+            detail="Failed to delete content. Please try again."
+        )
 
 
 
@@ -324,37 +282,17 @@ def get_piece_content(content_id: UUID, user_id: UUID = Query(...), db: Session 
     return content
 
 
-@router.post("/content/recent", response_model=list[ContentWithSummary])
+@router.post("/content/recent", response_model=list[ContentWithSummary], status_code=200)
 def get_recent_content(user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
     try:
-        results = (
-            db.query(Content, Folder, ContentItem)
-            .join(ContentAI, ContentAI.content_id == Content.content_id)
-            .outerjoin(folder_item, folder_item.content_id == Content.content_id)
-            .join(ContentItem, ContentItem.content_id == Content.content_id)
-            .outerjoin(Folder, folder_item.folder_id == Folder.folder_id)
-            .filter(ContentItem.user_id == user_id)
-            .order_by(ContentItem.saved_at.desc())
-            .limit(10)
-            .all()
+        return get_recent_saved_content(user_id=user_id, db=db)
+    
+    except ContentNotFound:
+        logging.error(f"Couldn't find any content recenty saved for user id {user_id}")
+        raise HTTPException(
+            status_code=204,
+            detail="No content found for user"
         )
-
-
-        response = []
-        for content, folder, _ in results:
-            response.append(ContentWithSummary(
-                content_id=content.content_id,
-                title=content.title,
-                url=content.url,
-                source=content.source,
-                first_saved_at=content.first_saved_at,
-                ai_summary=content.content_ai.ai_summary if content.content_ai else None,
-                folder = folder.folder_name if  folder and folder.folder_name else 'none'
-            ))
-
-        logger.info(f"Recent content for user id {user_id} being returned: {response}")
-
-        return response
 
     except Exception as e:
         logger.error(f"Error occured in api endpoint '/content/recent' : {e}")
