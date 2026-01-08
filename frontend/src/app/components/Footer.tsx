@@ -2,99 +2,66 @@ import Link from "next/link";
 import Image from "next/image";
 
 export default function Footer() {
+  const footerLinks = [
+    { label: "Features", href: "/#features" },
+    {
+      label: "Chrome Extension",
+      href: "https://chromewebstore.google.com/detail/csphere/naacmldkjnlfmhnkbbpppjpmdoiednnn",
+      external: true,
+    },
+    { label: "Privacy", href: "/privacy" },
+    { label: "Contact", href: "mailto:angelo.vitalino5@gmail.com", external: true },
+    {
+      label: "GitHub",
+      href: "https://github.com/angvit/Csphere",
+      external: true,
+    },
+  ].filter((l) => Boolean(l.href && l.href.trim() && l.label && l.label.trim()) && l.href !== "#");
+
   return (
     <footer
       id="contact"
-      className="bg-[#202A29] flex w-full h-full items-center justify-center text-white pt-12 md:pt-16 pb-4 md:pb-6 relative"
+      className="bg-[#202A29] flex w-full items-center justify-center text-white pt-6 pb-6 relative"
     >
       <div className="container px-4 md:px-6">
-        <div className="grid gap-8 lg:grid-cols-4 items-start justify-items-start">
-          <div className="rounded p-2 flex items-start justify-start self-start">
-            <div className="w-16 h-16 md:w-20 md:h-20 lg:w-32 lg:h-32 relative">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="rounded p-2 flex items-center justify-start">
+            <div className="w-16 h-16 md:w-20 md:h-20 relative">
               <Image
                 src="/cspherelogo2.png"
                 alt="Logo"
                 fill
                 className="object-contain invert brightness-0"
-                sizes="(max-width: 768px) 64px, (max-width: 1024px) 80px, 128px"
+                sizes="(max-width: 768px) 64px, (max-width: 1024px) 80px, 80px"
                 priority
                 quality={100}
               />
             </div>
           </div>
 
-          <div>
-            <ul className="space-y-2 text-gray-400">
-              <li>
-                <Link href="/#features" className="hover:text-white transition-colors">
-                  Features
-                </Link>
-              </li>
-              <li>
-                <a href="https://chromewebstore.google.com/detail/csphere/naacmldkjnlfmhnkbbpppjpmdoiednnn" className="hover:text-white transition-colors">
-                  Chrome Extension
-                </a>
-              </li>
-              <li>
-                <Link href="#" className="hover:text-white transition-colors">
-                  Security
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <ul className="space-y-2 text-gray-400">
-              <li>
-                <Link href="#" className="hover:text-white transition-colors">
-                  About
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="hover:text-white transition-colors">
-                  Blog
-                </Link>
-              </li>
-          
-              <li>
-                <Link href="/privacy" className="hover:text-white transition-colors">
-                  Privacy
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <ul className="space-y-2 text-gray-400">
-              <li>
-                <Link href="#" className="hover:text-white transition-colors">
-                  Help Center
-                </Link>
-              </li>
-              <li>
+          <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-gray-400">
+            {footerLinks.map((l) =>
+              l.external ? (
                 <a
-                  href="mailto:angelo.vitalino5@gmail.com"
+                  key={l.label}
+                  href={l.href}
+                  target={l.href.startsWith("http") ? "_blank" : undefined}
+                  rel={l.href.startsWith("http") ? "noopener noreferrer" : undefined}
                   className="hover:text-white transition-colors"
                 >
-                  Contact
+                  {l.label}
                 </a>
-              </li>
-              <li>
-                <a
-                  href="https://github.com/angvit/Csphere"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-white transition-colors"
-                >
-                  GitHub
-                </a>
-              </li>
-            </ul>
-          </div>
-        </div>
+              ) : (
+                <Link key={l.label} href={l.href} className="hover:text-white transition-colors">
+                  {l.label}
+                </Link>
+              )
+            )}
+          </nav>
 
-        <div className="mt-4 md:mt-6 pt-0 text-center text-white z-40">
-          <h3 className="!text-white">2025 Csphere. All rights reserved.</h3>
+          <div className="text-center sm:text-right text-white">
+            <h3 className="!text-white">2025 Csphere. All rights reserved.</h3>
+          </div>
         </div>
       </div>
     </footer>

@@ -185,6 +185,7 @@ function BookMarkSettingIcon({
       )}
       {shareModalOpen && (
         <ShareModal
+          isOpen={shareModalOpen}
           onClose={() => setShareModalOpen(false)}
           bookmarkUrl={url}
         />

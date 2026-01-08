@@ -1,6 +1,12 @@
 import React from "react";
 import { shareTo } from "@/lib/utils";
 import PlatformButton from "./PlatformButton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface PlatformProps {
   platform: "slack" | "instagram" | "gmail" | "messages";
@@ -21,7 +27,13 @@ const PlatformValues: PlatformProps[] = [
   }
 ];
 
-const ShareModal = ({ onClose, bookmarkUrl }) => {
+interface ShareModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  bookmarkUrl: string;
+}
+
+const ShareModal = ({ isOpen, onClose, bookmarkUrl }: ShareModalProps) => {
   const [copiedUrl, setCopiedUrl] = React.useState(false);
 
   const handleShare = async (platform: keyof typeof shareTo) => {
@@ -37,17 +49,16 @@ const ShareModal = ({ onClose, bookmarkUrl }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-lg p-6 w-[500px]">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium">Share</h3>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-xl"
-          >
-            x
-          </button>
-        </div>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent className="bg-white rounded-lg p-6 w-[500px]">
+        <DialogHeader className="mb-4">
+          <DialogTitle className="text-lg font-medium">Share</DialogTitle>
+        </DialogHeader>
 
         <div className="grid grid-cols-4 gap-4 mb-4">
           {PlatformValues.map((platformProp, index) => (
@@ -68,13 +79,13 @@ const ShareModal = ({ onClose, bookmarkUrl }) => {
           />
           <button
             onClick={handleCopyUrl}
-            className="bg-blue-500 text-white px-4 py-2 rounded-r hover:bg-blue-600 text-[15px]"
+            className="bg-black/80 text-white px-4 py-2 rounded-r hover:bg-black/60 text-[15px]"
           >
             {copiedUrl ? "Copied!" : "Copy"}
           </button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

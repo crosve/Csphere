@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {VisitButton} from "../../../components/VisitButton";
 import {
   Dialog,
   DialogContent,
@@ -69,10 +70,31 @@ export function BookmarkDetailModal({
     });
   };
 
+  const token = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("token="))
+    ?.split("=")[1];
+
+  const setReadLink = async () => {
+    try {
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/user/content/${bookmark.content_id}`;
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      console.log(data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[1000px] sm:max-w-none max-h-[100vh] bg-gray-300 p-2 flex flex-col wrap-break-word">
-        <DialogHeader className="p-6 pb-4 ">
+      <DialogContent className="w-[1000px] sm:max-w-none max-h-[100vh] bg-gray-300 p-2 flex flex-col wrap-break-word pl-6 pr-6">
+        <DialogHeader className="p-6 pb-4">
           <div className="flex items-start gap-4">
             {bookmark.url ? (
               <img
@@ -105,13 +127,11 @@ export function BookmarkDetailModal({
               </div>
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => window.open(bookmark.url, "_blank")}
-              >
-                Visit
-              </Button>
+              <VisitButton
+                url={bookmark.url}
+                contentId={bookmark.content_id}
+                onVisit={setReadLink}
+              />
             </div>
           </div>
         </DialogHeader>
