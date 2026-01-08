@@ -1,8 +1,8 @@
 from sqlalchemy import Column, String, TIMESTAMP
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship, Mapped
 from app.db.database import Base
-from pydantic import BaseModel, EmailStr
-from datetime import datetime
+from app.data_models.user_tag import UserTag
 import uuid
 
 
@@ -16,6 +16,8 @@ class User(Base):
     password = Column(String, nullable=False)
     google_id = Column(String, nullable=True)
     profile_path = Column(String, default='')
+
+    user_tags: Mapped[list["UserTag"]] = relationship("UserTag", back_populates="user")
 
 
 
