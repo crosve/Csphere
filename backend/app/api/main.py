@@ -9,7 +9,7 @@ import logging
 import sys
 
 
-from app.routes import user_router, folder_router, auth_router, content_router, setting_router
+from app.routes import user_router, folder_router, auth_router, content_router, setting_router, tag_router
 
 # Load environment variables from a .env file
 load_dotenv()
@@ -45,6 +45,7 @@ app.include_router(folder_router)
 app.include_router(auth_router)
 app.include_router(content_router)
 app.include_router(setting_router)
+app.include_router(tag_router)
 
 
 @app.middleware("http")

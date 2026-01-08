@@ -1,6 +1,4 @@
-// components/BookmarkLayout.tsx
 "use client";
-
 import { ReactNode, useState, useEffect, createContext } from "react";
 import { Tabs } from "@/components/ui/tabs";
 import { fetchToken } from "@/functions/user/UserData";
@@ -12,9 +10,10 @@ type Props = {
 interface MetaDataProps {
   unreadCount: number;
 }
+
 export const LayoutContext = createContext<ViewMode>("grid");
 
-export default function FolderLayout({ children }: Props) {
+function TagsLayout({ children }: Props) {
   const [activeTab, setActiveTab] = useState("latest");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [metaData, setMetaData] = useState<MetaDataProps>({
@@ -70,3 +69,5 @@ export default function FolderLayout({ children }: Props) {
     </div>
   );
 }
+
+export default TagsLayout;

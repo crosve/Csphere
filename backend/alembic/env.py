@@ -38,6 +38,8 @@ from app.data_models.folder import Folder
 from app.data_models.folder_item import folder_item
 from app.data_models.category import Category
 from app.data_models.content_category import ContentCategory
+from app.data_models.tag import Tag
+from app.data_models.user_tag import UserTag
 
 target_metadata = Base.metadata
 

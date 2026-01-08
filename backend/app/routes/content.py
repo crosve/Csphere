@@ -1,37 +1,24 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from app.db.database import get_db
 from app.data_models.content import Content
 from app.data_models.content_item import ContentItem
-from app.data_models.content_ai import ContentAI
-from app.data_models.folder_item import folder_item
-from app.data_models.folder import Folder
-from app.schemas.content import ContentCreate, ContentSavedByUrl, ContentWithSummary, UserSavedContent, DBContent, TabRemover, NoteContentUpdate, UserSavedContentResponse, CategoryOut
-from app.preprocessing.content_preprocessor import ContentPreprocessor
-from app.preprocessing.query_preprocessor import QueryPreprocessor
-from app.embeddings.embedding_manager import ContentEmbeddingManager
-from app.deps.services import get_embedding_manager
-from app.ai.categorizer import Categorizer
+from app.schemas.content import ContentCreate, ContentSavedByUrl, ContentWithSummary, TabRemover, NoteContentUpdate, UserSavedContentResponse
 from app.data_models.user import User
-from datetime import datetime, timezone
-from uuid import uuid4
 import logging
-from sqlalchemy.orm import joinedload
-from dateutil.parser import isoparse
 
 from app.utils.hashing import get_current_user_id
 from app.utils.user import get_current_user
 from app.utils.url import ensure_safe_url
 from sqlalchemy.orm import Session
 from uuid import UUID
-from sqlalchemy import desc, select 
 
-import requests 
-import json 
+from app.services.content_services import (search_content,
+ _enqueue_new_content, get_total_unread_count,
+ get_unread_content_service, get_content_service, 
+ update_note_service, tab_content, untabContent,
+ delete_content, get_recent_saved_content)
 
-from email.utils import quote
-
-import os
-from dotenv import load_dotenv
+from app.exceptions.content_exceptions import EmbeddingManagerNotFound, NoMatchedContent, NotesNotFound, ContentItemNotFound, ContentNotFound
 
 
 router = APIRouter(
@@ -42,90 +29,31 @@ logger = logging.getLogger(__name__)
 
 
 
-@router.get("/content/search", response_model=UserSavedContentResponse)
+@router.get("/content/search", response_model=UserSavedContentResponse, status_code=status.HTTP_200_OK)
 def search(query: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    manager = get_embedding_manager()
-    manager.db = db
-
-    parsed_query = QueryPreprocessor().preprocess_query(query)
-
-    results = manager.query_similar_content(
-        query=parsed_query,
-        user_id=user.id
-    )
-
-    bookmark_data = []
-
-    for content_ai, content in results:
-        bookmark_data.append(
-            UserSavedContent(
-                content_id=content_ai.content_id,
-                title=content.title,
-                url=content.url,
-                source=content.source,
-                first_saved_at=content.first_saved_at,
-                ai_summary=content_ai.ai_summary,
-                notes="", 
-                tags=[]    
-            )
-        )
-
-    logger.info(f"Data for search: {bookmark_data}")
-    return {
-        "bookmarks": bookmark_data,
-        "categories": [],  # or `None`, depending on how you define Optional
-        "has_next" : False
-    }
-
-
-
-def push_to_activemq(message: str):
-    ACTIVEMQ_URL=os.getenv('ACTIVEMQ_URL')
-    ACTIVEMQ_QUEUE= os.getenv('ACTIVEMQ_QUEUE')
-    ACTIVEMQ_USER= os.getenv('ACTIVEMQ_USER')
-    ACTIVEMQ_PASS= os.getenv('ACTIVEMQ_PASS')
 
     try:
-        url = f"{ACTIVEMQ_URL}/api/message/{quote(ACTIVEMQ_QUEUE)}?type=queue"
-        headers = {'Content-Type': 'text/plain'}
+        response_json = search_content(db=db, query=query, user=user )
+        return response_json
 
-        response = requests.post(url, data=message, headers=headers, auth=(ACTIVEMQ_USER, ACTIVEMQ_PASS))
-
-        logging.debug(f"Response from ActiveMQ: {response.status_code} - {response.text}")
-        return response.status_code == 200
+    except EmbeddingManagerNotFound:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="AI search engine is currently offline or broken"
+        )
     
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Error pushing to ActiveMQ: {e}")
-        return False
-
-
-def _enqueue_new_content(
-    *,
-    url: str,
-    title: str | None,
-    source: str,
-    html: str | None,
-    user_id: UUID,
-    notes: str | None,
-    folder_id: str | UUID | None,
-) -> None:
-    utc_time = datetime.now(timezone.utc)
-    payload = {
-        "content_payload": {
-            "url": url,
-            "title": title,
-            "source": source,
-            "first_saved_at": utc_time.isoformat(),
-        },
-        "raw_html": html,
-        "user_id": str(user_id),
-        "notes": notes,
-        "folder_id": str(folder_id) if folder_id else None,
-    }
-    message = json.dumps(payload)
-    result = push_to_activemq(message=message)
-    if not result:
-        raise HTTPException(status_code=503, detail="Failed to push to ActiveMQ")
+    except NoMatchedContent:
+        raise HTTPException(
+            status_code=status.HTTP_204_NO_CONTENT,
+            detail="No Matched content found for this search query"
+        )
+    except Exception as e:
+        logging.error(f"Search for query {query} failed. Error is as follows: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Search is currently unavailable, please try again"
+        )
+  
 
 
 @router.post("/content/save")
@@ -175,127 +103,41 @@ def save_content_by_url(content: ContentSavedByUrl, user: User = Depends(get_cur
 
     
 
-@router.get("/content/unread/count")
+@router.get("/content/unread/count", status_code=status.HTTP_200_OK)
 def get_unread_count(user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
     try:
-        total_count = db.query(ContentItem).filter(ContentItem.user_id == user_id, ContentItem.read == False).count()
-
-        logger.debug(f"Total count fetched for user id {user_id} : {total_count}")
-        return {'status' : "succesful", 'total_count' : total_count}
-
+        return get_total_unread_count(user_id=user_id, db=db)
 
     except Exception as e:
         logger.error(f"Error occured in count api router: {e}")
-        return {'status' : 'unsuccesfull', 'error' : str(e)}
-
-
-
-
-@router.get("/content/unread", response_model=UserSavedContentResponse)
-def get_unread_content(cursor: str = None, user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
-    print("in here")
-
-    PAGE_SIZE = 18
-    cursor_dt = None
-    if cursor:
-
-        try:
-            cursor_dt = isoparse(cursor)
-        except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid cursor format. Use ISO8601 datetime.")
         
-
-    query = (
-        db.query(ContentItem, Content, ContentAI.ai_summary)
-        .join(Content, ContentItem.content_id == Content.content_id)
-        .outerjoin(ContentAI, Content.content_id == ContentAI.content_id)
-        .options(joinedload(Content.categories))
-        .filter(ContentItem.user_id == user_id, ContentItem.read == False)
-    )
-
-    if cursor_dt:
-        query.filter(ContentItem.saved_at < cursor_dt)
-
-    query = query.order_by(desc(ContentItem.saved_at)).limit(PAGE_SIZE + 1)
-
-    results = query.all()
-
-    # Check if we have more results
-    has_next = len(results) > PAGE_SIZE
-    results = results[:PAGE_SIZE]
-
-    category_list = []
-    bookmark_data = []
-
-
-    
-    results = (
-        db.query(ContentItem, Content, ContentAI.ai_summary)
-        .join(Content, ContentItem.content_id == Content.content_id)
-        .outerjoin(ContentAI, Content.content_id == ContentAI.content_id)
-        .options(joinedload(Content.categories))  # Eager load categories
-        .filter(ContentItem.user_id == user_id, ContentItem.read == False)
-        .order_by(desc(ContentItem.saved_at))
-        .all()
-    )
-
-    bookmark_data = []
-    category_list = []
-
-    for item, content, ai_summary in results:
-        tags = [CategoryOut.from_orm(cat) for cat in content.categories]
-        bookmark_data.append(
-            UserSavedContent(
-                content_id=content.content_id,
-                url=content.url,
-                title=content.title,
-                source=content.source,
-                ai_summary=ai_summary,
-                first_saved_at=item.saved_at,
-                notes=item.notes,
-                tags=tags
-            )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to get the total count at this moment"
         )
-        category_list.extend(tags)
-
-    unique_categories = {cat.category_id: cat for cat in category_list}.values()
-
-    # The new cursor = last item’s saved_at
-    next_cursor = bookmark_data[-1].first_saved_at.isoformat() if bookmark_data else None
-
-    return {
-        "bookmarks": bookmark_data,
-        "categories": list(unique_categories)[:10],
-        "next_cursor": next_cursor,
-        "has_next": has_next
-    }
 
 
-    # for item, content, ai_summary in results:
-    #     tags = [CategoryOut.from_orm(cat) for cat in content.categories]
-    #     bookmark_data.append(
-    #         UserSavedContent(
-    #             content_id=content.content_id,
-    #             url=content.url,
-    #             title=content.title,
-    #             source=content.source,
-    #             ai_summary=ai_summary,
-    #             first_saved_at=item.saved_at,
-    #             notes=item.notes,
-    #             tags=tags
-    #         )
-    #     )
-    #     category_list.extend(tags)
 
-    # # Deduplicate categories by category_id
-    # unique_categories = {cat.category_id: cat for cat in category_list}.values()
 
-    # return {
-    #     "bookmarks": bookmark_data,
-    #     "categories": list(unique_categories),
-    #     "has_next": True,
-    #     "next_cursor": ''
-    # }
+@router.get("/content/unread", response_model=UserSavedContentResponse, status_code=status.HTTP_200_OK)
+def get_unread_content(cursor: str = None, user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
+
+
+    try:
+        return get_unread_content_service(cursor=cursor, user_id=user_id, db=db)
+
+    #catches the previous message we're bubbling up
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    except Exception as e:
+        logging.error(f"failed to get unread content for user id {user_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Server error trying to fetch the unread content for the users unread content"
+        )
+
+
 
 
 
@@ -306,212 +148,114 @@ def get_user_content(
     user_id: UUID = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
-    PAGE_SIZE = 10
-
-    if categories:
-        categories = set(categories)
-
-    # Parse cursor into datetime if provided
-
-    #note: adding in another param - filters of categories we need to fetch 
-    cursor_dt = None
-    if cursor:
-        try:
-            cursor_dt = isoparse(cursor)
-        except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid cursor format. Use ISO8601 datetime.")
-
-    # Base query
-    query = (
-        db.query(ContentItem, Content, ContentAI.ai_summary)
-        .join(Content, ContentItem.content_id == Content.content_id)
-        .outerjoin(ContentAI, Content.content_id == ContentAI.content_id)
-        .options(joinedload(Content.categories))
-        .filter(ContentItem.user_id == user_id)
-    )
-
-    if cursor_dt:
-        query = query.filter(ContentItem.saved_at < cursor_dt)
-
     
 
-    query = query.order_by(desc(ContentItem.saved_at)).limit(PAGE_SIZE + 1)
+    try:
+        return get_content_service(cursor=cursor, user_id=user_id, db=db, categories=categories)
+    
+    except ValueError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )
+    
+    except Exception as e:
+        db.rollback()
+        logging.error(f"Following error happened when fetching the content for user id {user_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Server side error trying to fetch the content for the user"
+        )
 
-    results = query.all()
 
-    # Check if we have more results
-    has_next = len(results) > PAGE_SIZE
-    results = results[:PAGE_SIZE]
-
-    category_list = []
-    bookmark_data = []
-
-    for item, content, ai_summary in results:
-        tags = [CategoryOut.from_orm(cat) for cat in content.categories]
-
-        #calculate the intersection between the two 
-        
-        if categories:
-            common_tags = set(tags).intersection(categories)
-
-
-            if len(common_tags) >= 1:
-                bookmark_data.append(
-                    UserSavedContent(
-                        content_id=content.content_id,
-                        url=content.url,
-                        title=content.title,
-                        source=content.source,
-                        ai_summary=ai_summary,
-                        first_saved_at=item.saved_at,
-                        notes=item.notes,
-                        tags=tags
-                    )
-                )
-                category_list.extend(tags)
-
-        #no categories being filteres - Just add them in 
-        else:
-            bookmark_data.append(
-                UserSavedContent(
-                    content_id=content.content_id,
-                    url=content.url,
-                    title=content.title,
-                    source=content.source,
-                    ai_summary=ai_summary,
-                    first_saved_at=item.saved_at,
-                    notes=item.notes,
-                    tags=tags
-                )
-            )
-            category_list.extend(tags)
-
-        
-
-    unique_categories = {cat.category_id: cat for cat in category_list}.values()
-
-    # The new cursor = last item’s saved_at
-    next_cursor = bookmark_data[-1].first_saved_at.isoformat() if bookmark_data else None
-
-    return {
-        "bookmarks": bookmark_data,
-        "categories": list(unique_categories)[:10],
-        "next_cursor": next_cursor,
-        "has_next": has_next
-    }
+    
 
 @router.post("/content/update/notes")
 def updatenote(data: NoteContentUpdate, user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
-    previous_note = db.query(ContentItem).filter(ContentItem.content_id == data.bookmarkID).first()
 
-    if not previous_note:
-        raise HTTPException(status_code=404, detail="Content item not found")
 
+    try:
+        return update_note_service(data=data, user_id=user_id, db=db)
     
-    previous_note.notes = data.notes
+    except NotesNotFound as e:
+        db.rollback()
+        logging.info("Notes for user was not found")
+        raise HTTPException(status_code=404, detail=str(e))
+    
+    except Exception as e:
+        db.rollback()
 
-    # Commit the change
-    db.commit()
-
-    return {"message": "Note updated successfully", "bookmarkID": str(data.bookmarkID)}
-
-
-
+        logger.error(f"User notes failed to update: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="A server side error occured when trying to update the users notes"
+        )
 
 
-
-
-
-@router.post("/content/tab")
+@router.post("/content/tab", status_code=200)
 def tab_user_content(content: TabRemover,user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
 
     try:
-        content_id = content.content_id
-
-        query = db.query(Content).filter(
-            Content.content_id == content_id
-        )
-
-        DBcontent = query.one_or_none()
-
-        if not DBContent:
-            raise HTTPException(
-            status_code=400,
-            detail="Content not found in the Contents table"
-        )
-
-
-        existing_item = db.query(ContentItem).filter(
-            ContentItem.user_id == user_id,
-            ContentItem.content_id == DBcontent.content_id
-        ).first()
-
-        utc_time = datetime.now(timezone.utc)
-
-        if not existing_item:
-            new_item = ContentItem(
-                user_id=user_id,
-                content_id=DBcontent.content_id,
-                saved_at=utc_time,  
-                notes='' 
-            )
-            db.add(new_item)
-            db.commit()
-
-        return {'success' : True}
+        return tab_content(content=content, user_id=user_id, db = db)
     
+    except ContentItemNotFound as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=404,
+            detail=str(e)
+        )
+
     except Exception as e:
-        print("error in the backend: ", e)
-        return {'success': False}
+        db.rollback()
+        logging.error(f"error in the backend: {e}")
+        raise HTTPException(
+            status_code=500, 
+            detail="An error occured when trying to tab the content for the user"
+
+        )
 
 
-    
 
-
-
-
-
-@router.post("/content/untab")
+@router.post("/content/untab", status_code=200)
 def untab_user_content(content: TabRemover,user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
-    #remove based on user_id and content_id
-    content_id_to_delete = content.content_id
+    try:
+        return untabContent(content=content, user_id=user_id, db=db)
 
-    # Construct the query to find the specific ContentItem to delete
-    query = db.query(ContentItem).filter(
-        ContentItem.user_id == user_id,
-        ContentItem.content_id == content_id_to_delete
-    )
-
-
-    deleted_row_count = query.delete(synchronize_session='fetch')
-
-    if deleted_row_count == 0:
-     
+    except ContentItemNotFound as e:
+        logging.error(f"Content item could not be untabbed because it was not found: {e}")
+        db.rollback()
         raise HTTPException(
             status_code=400,
-            detail="Content item not found for the specified user and content ID."
+            detail=str(e)
         )
 
-    db.commit()
 
-    return {
-        "message": "Content item successfully untabbed (deleted).",
-        "user_id": user_id,
-        "content_id": content_id_to_delete,
-        "deleted_count": deleted_row_count
-    }
+    except Exception as e:
+        db.rollback()
+        logging.error(f"Error occured trying to untab for user {user_id}: {e}")
 
+        raise HTTPException(
+            status_code=500,
+            detail="An error occured when trying to untab the users content. Try again in a little bit. "
+        )
+
+        
 
 
 @router.delete("/content/{content_id}", status_code=204)
-def delete_content(content_id: UUID, user_id: UUID, db: Session=Depends(get_db)):
-    content = db.query(Content).filter(Content.content_id == content_id, Content.user_id == user_id).first()
-    if not content:
-        raise HTTPException(status_code=404, detail="Content not found or not owned by user")
+def delete_content(content_id: UUID, user_id: UUID = Depends(get_current_user_id), db: Session=Depends(get_db)):
 
-    db.delete(content)
-    db.commit()
-    return
+    try:
+        return delete_content(content_id=content_id, user_id=user_id, db=db)
+
+    except Exception as e:
+        logging.error(f"Failed to delete content: {e}")
+        db.rollback()
+        HTTPException(
+            status_code=500,
+            detail="Failed to delete content. Please try again."
+        )
 
 
 
@@ -538,37 +282,17 @@ def get_piece_content(content_id: UUID, user_id: UUID = Query(...), db: Session 
     return content
 
 
-@router.post("/content/recent", response_model=list[ContentWithSummary])
+@router.post("/content/recent", response_model=list[ContentWithSummary], status_code=200)
 def get_recent_content(user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
     try:
-        results = (
-            db.query(Content, Folder, ContentItem)
-            .join(ContentAI, ContentAI.content_id == Content.content_id)
-            .outerjoin(folder_item, folder_item.content_id == Content.content_id)
-            .join(ContentItem, ContentItem.content_id == Content.content_id)
-            .outerjoin(Folder, folder_item.folder_id == Folder.folder_id)
-            .filter(ContentItem.user_id == user_id)
-            .order_by(ContentItem.saved_at.desc())
-            .limit(10)
-            .all()
+        return get_recent_saved_content(user_id=user_id, db=db)
+    
+    except ContentNotFound:
+        logging.error(f"Couldn't find any content recenty saved for user id {user_id}")
+        raise HTTPException(
+            status_code=204,
+            detail="No content found for user"
         )
-
-
-        response = []
-        for content, folder, _ in results:
-            response.append(ContentWithSummary(
-                content_id=content.content_id,
-                title=content.title,
-                url=content.url,
-                source=content.source,
-                first_saved_at=content.first_saved_at,
-                ai_summary=content.content_ai.ai_summary if content.content_ai else None,
-                folder = folder.folder_name if  folder and folder.folder_name else 'none'
-            ))
-
-        logger.info(f"Recent content for user id {user_id} being returned: {response}")
-
-        return response
 
     except Exception as e:
         logger.error(f"Error occured in api endpoint '/content/recent' : {e}")

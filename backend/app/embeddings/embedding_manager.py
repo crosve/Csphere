@@ -160,7 +160,20 @@ class ContentEmbeddingManager:
         #     .filter(ContentItem.user_id == user_id)
         # )
 
-        TOP_K_FETCH = 50
+
+        # cosine_dist = Folder.folder_embedding.cosine_distance(metadataVector)
+        # similarity = (1 - cosine_dist).label("similarity")
+
+        # results = (
+        #     self.db.query(Folder, similarity)
+        #     .filter(Folder.user_id == user_id)
+        #     .filter(Folder.bucketing_mode == True)
+        #     .order_by(cosine_dist) # Nearest distance first
+        #     .limit(5)
+        #     .all()
+        # )
+
+        TOP_K_FETCH = 6
 
         query = (
             self.db.query(
