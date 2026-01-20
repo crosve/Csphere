@@ -22,15 +22,61 @@ interface TagCreationData {
   tag_name: string;
 }
 
+interface TargetTagDetail {
+  tag_name: string;
+  tag_id: string;
+}
+
 function Page() {
   const [open, setOpen] = useState<boolean>(false);
-  const [usersTags, setUsersTags] = useState<Tag[]>([]);
+  const [usersTags, setUsersTags] = useState<Tag[]>([]); //state to save the tags
   const [isBulkEdit, setIsBulkEdit] = useState<boolean>(false);
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
   const [selectecdAction, setSelectedAction] = useState<string>("");
   const [tagData, setTagData] = useState<TagCreationData>({
     tag_name: "",
   });
+
+  const [targetTag, setTargetTag] = useState<TargetTagDetail>({
+    tag_name: "",
+    tag_id: "",
+  });
+  const [targetTagId, setTargetTagId] = useState<string>("");
+
+  const handleSaveEdit = async (
+    e: React.MouseEvent | React.KeyboardEvent,
+    tag_id: string,
+  ) => {
+    e.stopPropagation();
+
+    console.log("handling the handleSaveEdit");
+
+    setUsersTags((prev) => {
+      return prev.map((tag) => {
+        if (tag.tag_id === tag_id) {
+          return {
+            ...tag,
+            tag_name: targetTag.tag_name,
+          };
+        }
+        return tag;
+      });
+    });
+
+    setTargetTagId("");
+  };
+
+  const handleEditTag = (tag_id: string) => {
+    usersTags.map((tag) => {
+      if (tag.tag_id === tag_id) {
+        setTargetTag({
+          tag_name: tag.tag_name,
+          tag_id: tag.tag_id,
+        });
+      }
+    });
+    setTargetTagId(tag_id);
+  };
 
   const toggleTagSelection = (tagId: string) => {
     if (!isBulkEdit) return;
@@ -219,7 +265,8 @@ function Page() {
         {/* Tags Display */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-1">
           {usersTags.map((tag, index) => {
-            const isSelected = selectedTags.has(tag.tag_id);
+            const tagId: string = tag.tag_id;
+            const isSelected = selectedTags.has(tagId);
 
             return (
               <div
@@ -242,15 +289,53 @@ function Page() {
                   />
                 )}
 
-                <span className="text-sm font-bold uppercase tracking-widest">
-                  {tag.tag_name}
-                </span>
+                {targetTagId === tag.tag_id ? (
+                  <input
+                    autoFocus
+                    className="text-[10px] w-20 border-b border-gray-500 bg-transparent outline-none uppercase font-mono"
+                    value={targetTag.tag_name}
+                    onChange={(e) =>
+                      setTargetTag({
+                        ...targetTag,
+                        tag_name: e.target.value,
+                      })
+                    }
+                    // onBlur={() => setTargetTagId("")}
+                  />
+                ) : (
+                  <span className="text-sm font-bold uppercase tracking-widest">
+                    {tag.tag_name}
+                  </span>
+                )}
 
                 {/* Edit label - hidden during Bulk Edit to keep UI clean */}
                 {!isBulkEdit && (
-                  <span className="opacity-0 group-hover:opacity-100 text-[10px] cursor-pointer text-gray-500 font-mono tracking-tighter">
-                    EDIT
-                  </span>
+                  <>
+                    {targetTagId === tag.tag_id ? (
+                      <span
+                        className="opacity-0 group-hover:opacity-100 text-[10px] cursor-pointer text-gray-500 font-mono tracking-tighter"
+                        onClick={(e) => {
+                          e.stopPropagation();
+
+                          console.log("executing the handleSaveEdit");
+                          handleSaveEdit(e, tag.tag_id);
+                        }}
+                      >
+                        Save Edit
+                      </span>
+                    ) : (
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          console.log("editing tag id: ", tagId);
+                          handleEditTag(tag.tag_id);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 text-[10px] cursor-pointer text-gray-500 font-mono tracking-tighter"
+                      >
+                        EDIT
+                      </span>
+                    )}
+                  </>
                 )}
               </div>
             );
