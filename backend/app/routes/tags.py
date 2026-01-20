@@ -10,8 +10,8 @@ from app.data_models.content import Content
 from app.data_models.content_item import ContentItem
 from app.data_models.content_ai import ContentAI
 
-from app.services.tag_services import create_tag_service, get_user_tags_service
-from app.schemas.tag import TagCreationData
+from app.services.tag_services import create_tag_service, get_user_tags_service, delete_user_tags_service
+from app.schemas.tag import TagCreationData, TagDeleteData
 from app.db.database import get_db
 from app.exceptions.tag_exceptions import TagAlreadyExists
 
@@ -58,4 +58,14 @@ def get_tags(user_id: UUID = Depends(get_current_user_id), db : Session = Depend
         
     except Exception as e: 
         logging.error(f"Failed to fetch user {user_id}'s tags: {e}")
+
+
+@router.delete('/tag', status_code=200)
+def delete_tags(tags : TagDeleteData, user_id: UUID = Depends(get_current_user_id), db : Session = Depends(get_db)):
+    try:
+        return delete_user_tags_service(tag_ids=tags.tag_ids, user_id=user_id, db=db)
+
+    except Exception as e:
+        logging.error(f"Failed to delete tags for user, {e}")
+    
 

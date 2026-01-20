@@ -1,12 +1,12 @@
 from sqlalchemy.orm import Session
-from app.schemas.tag import TagCreationData
+from app.schemas.tag import TagCreationData, TagDeleteData
 from uuid import UUID
 from app.data_models.user import User
 from app.exceptions.tag_exceptions import TagsNotFound, TagAlreadyExists
 from app.data_models.tag import Tag
 from app.data_models.user_tag import UserTag
 from datetime import datetime
-
+from sqlalchemy import delete
 from uuid import uuid4
 
 
@@ -24,7 +24,7 @@ def create_tag_service ( user_id: UUID,  tag_data : TagCreationData,  db : Sessi
         tag = exists
 
         #confirm they're not already connected 
-        existing_user_tag = db.query(UserTag).filter(UserTag.user_id==user_id, tag.tag_id == UserTag.tag_id)
+        existing_user_tag = db.query(UserTag).filter(UserTag.user_id==user_id, tag.tag_id == UserTag.tag_id).first()
         if existing_user_tag:
             raise TagAlreadyExists()
     
@@ -58,7 +58,10 @@ def create_tag_service ( user_id: UUID,  tag_data : TagCreationData,  db : Sessi
     return {
         'success' : True, 
         'newTag' : new_user_tag
+        
     }
+    
+
     
 
     
@@ -96,7 +99,35 @@ def get_user_tags_service(user_id : UUID, db : Session):
         })
 
     
-    print("user tags being returned: ", res)
-
     return res
 
+
+
+
+# class User(Base):
+#     __tablename__ = "users"
+
+#     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid)
+#     email = Column(String, unique=True, nullable=False)
+#     created_at = Column(TIMESTAMP, server_default="NOW()")
+#     username = Column(String,  nullable=False)
+#     password = Column(String, nullable=False)
+#     google_id = Column(String, nullable=True)
+#     profile_path = Column(String, default='')
+
+#     user_tags: Mapped[list["UserTag"]] = relationship("UserTag", back_populates="user")
+def delete_user_tags_service(user_id: UUID, tag_ids: list[UUID], db: Session):
+    # We use a bulk delete statement for efficiency
+    stmt = (
+        delete(UserTag)
+        .where(UserTag.user_id == user_id)
+        .where(UserTag.tag_id.in_(tag_ids))
+    )
+    
+    result = db.execute(stmt)
+    db.commit()
+
+    return {
+        "status": "success", 
+        "deleted_count": result.rowcount
+    }

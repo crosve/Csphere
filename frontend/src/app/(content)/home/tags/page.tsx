@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+import { act, useEffect, useState } from "react";
 import TagsLayout from "./TagsLayout";
 import { fetchToken } from "@/functions/user/UserData";
+import { CheckCircle2 } from "lucide-react"; // Optional: for a visual checkmark
 
 import {
   Popover,
@@ -9,17 +10,91 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
+import TagSelectionTab from "@/components/tag/TagSelectionTab";
+
+interface Tag {
+  tag_id: string;
+  tag_name: string;
+  first_created_at?: string;
+}
+
 interface TagCreationData {
   tag_name: string;
 }
 
 function Page() {
   const [open, setOpen] = useState<boolean>(false);
-  const [usersTags, setUsersTags] = useState([]);
+  const [usersTags, setUsersTags] = useState<Tag[]>([]);
+  const [isBulkEdit, setIsBulkEdit] = useState<boolean>(false);
+  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
+  const [selectecdAction, setSelectedAction] = useState<string>("");
   const [tagData, setTagData] = useState<TagCreationData>({
     tag_name: "",
   });
 
+  const toggleTagSelection = (tagId: string) => {
+    if (!isBulkEdit) return;
+
+    setSelectedTags((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(tagId)) {
+        newSet.delete(tagId);
+      } else {
+        newSet.add(tagId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectedAction = async (action: string) => {
+    console.log("launched action, action is ", action);
+    try {
+      if (selectedTags.size === 0) {
+        alert("No tags selected!");
+        return;
+      }
+
+      if (action === "remove") {
+        const token = fetchToken();
+        const tagIds = Array.from(selectedTags);
+
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/tag`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ tag_ids: tagIds }),
+        });
+
+        const data = await res.json();
+        console.log("returned data: ", data);
+
+        if (data.status === "success") {
+          setUsersTags((prev) =>
+            prev.filter((tag) => !selectedTags.has(tag.tag_id)),
+          );
+          setSelectedTags(new Set());
+          setIsBulkEdit(false);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to handle selected action:", err);
+    } finally {
+      setSelectedAction("");
+    }
+  };
+
+  const handleBulkEdit = (editType: string) => {
+    if (editType === "cancel-edit") {
+      setIsBulkEdit(false);
+      setSelectedTags(new Set()); // Clear selection on cancel
+    } else {
+      setIsBulkEdit(true);
+    }
+  };
+
+  // --- Your original updateTagName function ---
   const updateTagName = (value: string) => {
     setTagData({
       ...tagData,
@@ -33,8 +108,6 @@ function Page() {
 
     const body_payload = JSON.stringify(tagData);
 
-    console.log("Body payload: ", body_payload);
-
     const res = await fetch(apiUrl, {
       method: "POST",
       headers: {
@@ -45,46 +118,54 @@ function Page() {
     });
 
     const data = await res.json();
-    console.log("creation response: ", data);
+
+    console.log("data being returned: ", data);
+
+    if (res.ok) {
+      // Refresh the list or add the new tag to state
+      const resTagData = data.newTag;
+      const newTagInput = {
+        tag_id: resTagData.tag_id,
+        tag_name: tagData.tag_name,
+      };
+      setUsersTags((prev) => [...prev, newTagInput]);
+      setTagData({ tag_name: "" });
+      setOpen(false);
+    }
   };
+
   useEffect(() => {
     const getUserTags = async () => {
       const token = fetchToken();
-
       const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/tag`;
-
       const res = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          // 'Content-Type': 'application/json', // Inform the server about the content type
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-
       const data = await res.json();
       setUsersTags(data);
-
-      console.log("response data: ", data);
     };
-
     getUserTags();
   }, []);
+
   return (
     <TagsLayout>
       <div className="min-h-screen p-8 text-gray-900 font-sans">
-        {/* Top Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-12">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight uppercase ">
+            <h1 className="text-2xl font-bold tracking-tight uppercase">
               Your Tags ({usersTags.length})
             </h1>
-            <div className="h-1 w-12 bg-gray-900 mt-1"></div>{" "}
-            {/* Minimalist accent line */}
+            <div className="h-1 w-12 bg-gray-900 mt-1"></div>
           </div>
 
           <div className="flex items-center space-x-2">
-            <button className="rounded-md border border-gray-400 bg-gray-300 px-4 py-1.5 text-sm font-medium hover:bg-gray-400 transition-colors cursor-pointer">
-              Bulk Edit
+            <button
+              onClick={() =>
+                handleBulkEdit(isBulkEdit ? "cancel-edit" : "edit")
+              }
+              className="rounded-md border border-gray-400 bg-gray-300 px-4 py-1.5 text-sm font-medium hover:bg-gray-400 transition-colors"
+            >
+              {isBulkEdit ? "Cancel" : "Bulk Edit"}
             </button>
             <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
@@ -123,33 +204,57 @@ function Page() {
                 </div>
               </PopoverContent>
             </Popover>
+            {/* ... Popover for Create Tag remains the same */}
           </div>
         </div>
 
-        {/* Search / Filter Row (Optional but keeps it functional) */}
-        <div className="mb-8">
-          <input
-            type="text"
-            placeholder="Filter tags..."
-            className="w-full max-w-xs bg-gray-300 border-b-2 border-gray-400 p-1 focus:outline-none focus:border-gray-900 placeholder-gray-500 text-sm"
+        {isBulkEdit && (
+          <TagSelectionTab
+            setSelectedAction={setSelectedAction}
+            handleSelectedAction={handleSelectedAction}
+            selectedAction={selectecdAction}
           />
-        </div>
+        )}
 
         {/* Tags Display */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-px p-1 space-x-1.5 space-y-1  ">
-          {usersTags.map((tag, index) => (
-            <div
-              key={index}
-              className="bg-gray-300 p-6 flex items-center rounded-lg justify-between group hover:bg-gray-200 transition-all cursor-default"
-            >
-              <span className="text-sm font-bold uppercase tracking-widest">
-                {tag.tag_name}
-              </span>
-              <span className="opacity-0 group-hover:opacity-100 text-[10px] cursor-pointer text-gray-500 font-mono tracking-tighter">
-                EDIT
-              </span>
-            </div>
-          ))}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-1">
+          {usersTags.map((tag, index) => {
+            const isSelected = selectedTags.has(tag.tag_id);
+
+            return (
+              <div
+                key={index}
+                onClick={() => toggleTagSelection(tag.tag_id)}
+                className={`
+          relative p-6 flex items-center rounded-lg justify-between group transition-all
+          bg-gray-300 hover:bg-gray-200 
+          ${isBulkEdit ? "cursor-pointer" : "cursor-default"}
+          ${isSelected ? "ring-2 ring-gray-900 shadow-sm" : "ring-0"}
+        `}
+              >
+                {/* The Checkbox - only visible during Bulk Edit */}
+                {isBulkEdit && (
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    readOnly
+                    className="absolute bg-amber-100 top-2 right-2 w-4 h-4 accent-gray-900 cursor-pointer"
+                  />
+                )}
+
+                <span className="text-sm font-bold uppercase tracking-widest">
+                  {tag.tag_name}
+                </span>
+
+                {/* Edit label - hidden during Bulk Edit to keep UI clean */}
+                {!isBulkEdit && (
+                  <span className="opacity-0 group-hover:opacity-100 text-[10px] cursor-pointer text-gray-500 font-mono tracking-tighter">
+                    EDIT
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </TagsLayout>
