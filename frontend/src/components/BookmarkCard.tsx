@@ -12,7 +12,8 @@ import { toast } from "sonner";
 import NotePopup from "@/app/components/home/NotePopup";
 
 import BookMarkSettingIcon from "./BookMarkSettingIcon";
-import { BookmarkDetailModal } from "@/app/components/bookmark/BookmarkModel";
+import { BookmarkDetailModal } from "@/app/components/bookmark/BookmarkModal";
+import {VisitButton} from "./VisitButton";
 
 interface NoteButtonProps {
   handleNotePopoverClick: (e: React.MouseEvent) => void;
@@ -132,8 +133,7 @@ export default function BookmarkCard({ bookmark }: BookmarkCardProps) {
     }
   };
 
-  const setReadLink = async (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.stopPropagation(); // Prevent modal from opening
+  const setReadLink = async () => {
     try {
       const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/user/content/${bookmark.content_id}`;
       const response = await fetch(apiUrl, {
@@ -221,15 +221,11 @@ export default function BookmarkCard({ bookmark }: BookmarkCardProps) {
 
           {/* Footer */}
           <div className="flex justify-between items-center mt-auto pt-1 ">
-            <a
-              href={bookmark.url}
-              onClick={(e) => setReadLink(e)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 border border-black rounded-md px-3 py-1 text-sm text-black hover:bg-[#202A29] hover:text-white transition-colors"
-            >
-              Visit
-            </a>
+            <VisitButton 
+            url={bookmark.url} 
+            contentId={bookmark.content_id}
+            onVisit={setReadLink}
+            />
             <Button
               variant="ghost"
               size="icon"

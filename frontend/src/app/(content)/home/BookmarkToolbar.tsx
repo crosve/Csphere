@@ -48,8 +48,8 @@ export function BookmarkToolbar({ viewMode, onViewModeChange, unreadCount }: Boo
               onClick={() => onViewModeChange("list")}
               className={`rounded-l-none border-gray-700 ${
                 viewMode === "list"
-                  ? "bg-[#202A29] text-white hover:bg-gray-200"
-                  : "bg-transparent text-[#202A29] hover:bg-gray-100"
+                  ? "bg-[#202A29] text-white"
+                  : "bg-transparent text-[#202A29]"
               }`}
             >
               <List className="h-4 w-4" />

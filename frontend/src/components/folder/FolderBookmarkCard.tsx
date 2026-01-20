@@ -13,7 +13,7 @@ import NotePopup from "@/app/components/home/NotePopup";
 
 import { cn } from "@/lib/utils";
 import BookMarkSettingIcon from "../BookMarkSettingIcon";
-import { BookmarkDetailModal } from "@/app/components/bookmark/BookmarkModel";
+import { BookmarkDetailModal } from "@/app/components/bookmark/BookmarkModal";
 
 interface NoteButtonProps {
   handleNotePopoverClick: (e: React.MouseEvent) => void;

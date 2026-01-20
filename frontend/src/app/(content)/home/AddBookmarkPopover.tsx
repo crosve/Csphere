@@ -62,7 +62,7 @@ export default function AddBookmarkPopover() {
               Cancel
             </button>
             <button
-              className="rounded-lg px-3 py-1.5 bg-gray-800 text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              className="rounded-lg px-3 py-1.5 bg-[#202A29] text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
               onClick={handleCreate}
             >
               Create
