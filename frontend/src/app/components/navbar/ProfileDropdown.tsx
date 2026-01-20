@@ -118,15 +118,15 @@ function ProfileDropdown() {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
-        className="w-56 z-50 backdrop-blur-md border shadow-lg"
+        className="w-56 z-50 bg-gray-100 border border-gray-200 rounded-lg shadow-lg p-1"
         align="end"
       >
-        <DropdownMenuLabel>My Account</DropdownMenuLabel>
-        <DropdownMenuSeparator className="bg-gray-100" />
+        <DropdownMenuLabel className="text-gray-900">My Account</DropdownMenuLabel>
+        <DropdownMenuSeparator className="bg-gray-200" />
 
         <DropdownMenuGroup>
           <Link href="/profile">
-            <DropdownMenuItem className="cursor-pointer ">
+            <DropdownMenuItem className="cursor-pointer text-gray-700 focus:bg-gray-200 focus:text-gray-900">
               Profile
               <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
             </DropdownMenuItem>
@@ -136,16 +136,16 @@ function ProfileDropdown() {
             <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
           </DropdownMenuItem> */}
           <Link href="/setting">
-            <DropdownMenuItem className="cursor-pointer ">
+            <DropdownMenuItem className="cursor-pointer text-gray-700 focus:bg-gray-200 focus:text-gray-900">
               Settings
               <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
             </DropdownMenuItem>
           </Link>
-          <DropdownMenuSeparator className="bg-gray-100" />
+          <DropdownMenuSeparator className="bg-gray-200" />
 
           <DropdownMenuItem
             onClick={() => onLogout()}
-            className="cursor-pointer "
+            className="cursor-pointer text-gray-700 focus:bg-gray-200 focus:text-gray-900"
           >
             Logout
           </DropdownMenuItem>

@@ -149,17 +149,16 @@ export default function FeatureSection() {
                     Csphere Extension
                   </div>
                 </div>
-                <div className="aspect-video bg-gradient-to-br from-[#202A29] to-[#1a2221] flex items-center justify-center">
-                  <motion.div
-                    animate={{ scale: [1, 1.05, 1] }}
-                    transition={{
-                      duration: 2,
-                      repeat: Number.POSITIVE_INFINITY,
-                    }}
-                    className="text-6xl"
-                  >
-                    🔖
-                  </motion.div>
+                <div className="aspect-video">
+                  <iframe
+                    className="w-full h-full"
+                    src="https://www.youtube.com/embed/dbka770Q4Ig"
+                    title="Csphere in action"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allowFullScreen
+                  />
                 </div>
               </div>
             </div>

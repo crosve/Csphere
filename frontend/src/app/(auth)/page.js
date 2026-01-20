@@ -71,6 +71,7 @@ import { motion, useScroll } from "framer-motion";
 import { useRef } from "react";
 import FeatureSection from "@/components/FeatureSection";
 import LogoComponent from "@/app/components/LogoComponent";
+import Sphere from "@/app/components/sphere";
 
 const features = [
   {
@@ -156,8 +157,7 @@ export default function LandingPage() {
               transition={{ duration: 0.8, delay: 0.6 }}
               className="text-base md:text-xl text-gray-200 mt-8 max-w-3xl mx-auto leading-relaxed"
             >
-              Never lose your content again. Organize, access, and search your
-              bookmarks seamlessly across all your devices.
+              AI-powered bookmark manager that brings your content back to life. Search, organize, and rediscover everything you've ever saved.
             </motion.p>
           </section>
 
@@ -206,9 +206,7 @@ export default function LandingPage() {
               viewport={{ once: true }}
               className="text-xl text-gray-300"
             >
-              Join thousands of users who have already transformed their
-              bookmark management with Csphere. Download the extension today and
-              see the difference.
+              Join today to transform your bookmark chaos into an organized, searchable knowledge base. 
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -224,7 +222,7 @@ export default function LandingPage() {
                 rel="noreferrer"
               >
                 <Download className="w-6 h-2" />
-                Download Chrome Extension
+                Add to Chrome - It's free
               </motion.a>
             </motion.div>
           </div>
