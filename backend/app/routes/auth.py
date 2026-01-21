@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends,  HTTPException, status
 from fastapi.responses import RedirectResponse, JSONResponse
 from app.db.database import get_db
 from app.data_models.user import User
@@ -6,6 +6,10 @@ from app.functions.AWS_s3 import  get_presigned_url
 from app.utils.hashing import create_access_token
 from sqlalchemy.orm import Session
 from urllib.parse import urlencode
+import logging
+
+
+logger = logging.getLogger(__name__) 
 
 import httpx
 
@@ -22,14 +26,17 @@ router = APIRouter(
     prefix="/auth"
 )
 
-@router.get("/google")
+
+#implement CSRF when you get the chance
+@router.get("/google", status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 def handle_google_session():
 
     try:
-
-        print("google redirect uri ", GOOGLE_REDIRECT_URI )
-        print("google client id: ", GOOGLE_CLIENT_ID)
-        print("google client secret: ", GOOGLE_CLIENT_SECRET)
+        if not GOOGLE_CLIENT_ID or not GOOGLE_REDIRECT_URI:
+            raise HTTPException(
+                status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail = 'google client id or redirect url was not found',
+            )
         params = {
             "client_id": GOOGLE_CLIENT_ID,
             "redirect_uri": GOOGLE_REDIRECT_URI,
@@ -42,8 +49,11 @@ def handle_google_session():
         return RedirectResponse(google_auth_url)
     
     except Exception as e:
-        print("error occured in the backend: ", e)
-        return 
+        logging.error(f"OAuth Initiation Error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Authentication service temporarily unavailable"
+        )
     
 
 

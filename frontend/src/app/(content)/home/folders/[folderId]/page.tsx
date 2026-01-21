@@ -541,7 +541,7 @@ export default function Page({
               }}
               variant="outline"
               size="sm"
-              className="hover:bg-gray-300"
+              className="hover:bg-gray-400 text-gray-200 bg-gray-500"
             >
               {selectionMode ? "Cancel Selection" : "Select Bookmarks"}
             </Button>
