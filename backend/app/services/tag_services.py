@@ -1,127 +1,63 @@
 from sqlalchemy.orm import Session
-from app.schemas.tag import TagCreationData, TagDeleteData
-from uuid import UUID
-from app.data_models.user import User
-from app.exceptions.tag_exceptions import TagsNotFound, TagAlreadyExists
+from app.schemas.tag import TagCreationData
+from uuid import UUID, uuid4
+from app.exceptions.tag_exceptions import TagsNotFound, TagAlreadyExists, TagNotFound
 from app.data_models.tag import Tag
-from app.data_models.user_tag import UserTag
 from datetime import datetime
 from sqlalchemy import delete
-from uuid import uuid4
-
-
 import logging
 
 logger = logging.getLogger(__name__) 
 
-def create_tag_service ( user_id: UUID,  tag_data : TagCreationData,  db : Session):
-
-    #find if the tag already exists in the database
-    tag : Tag = None
-    exists = db.query(Tag).filter(Tag.tag_name == tag_data.tag_name).first()
+def create_tag_service(user_id: UUID, tag_data: TagCreationData, db: Session):
+    # Check if this specific user already has a tag with this name
+    exists = db.query(Tag).filter(
+        Tag.tag_name == tag_data.tag_name, 
+        Tag.user_id == user_id
+    ).first()
 
     if exists:
-        tag = exists
-
-        #confirm they're not already connected 
-        existing_user_tag = db.query(UserTag).filter(UserTag.user_id==user_id, tag.tag_id == UserTag.tag_id).first()
-        if existing_user_tag:
-            raise TagAlreadyExists()
+        raise TagAlreadyExists()
     
-    else:
-        tag = Tag(
-            tag_id=uuid4(),
-            tag_name=tag_data.tag_name,
-            first_created_at=datetime.utcnow()
-        )
-
-        db.add(tag)
-        db.commit()
-        db.refresh(tag)
-
-
-    #create the unity in the user_tag table
-
-
-    new_user_tag : UserTag = UserTag(
-        user_id=user_id,
-        tag_id=tag.tag_id,
+    # Every tag is now unique to the user
+    new_tag = Tag(
+        tag_id=uuid4(),
+        tag_name=tag_data.tag_name,
+        user_id=user_id, # Ownership is now direct
         first_created_at=datetime.utcnow()
     )
 
-    db.add(new_user_tag)
+    db.add(new_tag)
     db.commit()
-    db.refresh(new_user_tag)
-
-
+    db.refresh(new_tag)
 
     return {
-        'success' : True, 
-        'newTag' : new_user_tag
-        
+        'success': True, 
+        'newTag': new_tag
     }
+
+def get_user_tags_service(user_id: UUID, db: Session):
+    # Direct fetch from Tag table using user_id
+    tags = db.query(Tag).filter(Tag.user_id == user_id).all()
+
+    if not tags:
+        # Keeping your existing logic, though an empty list is often preferred over an exception
+        return []
     
+    return [
+        {
+            'tag_name': tag.tag_name,
+            'tag_id': tag.tag_id
+        } for tag in tags
+    ]
 
-    
-
-    
-    
-
-    
-
-
-
-
-    
-
-    
-
-def get_user_tags_service(user_id : UUID, db : Session):
-
-    user : User = db.query(User).filter(User.id == user_id).first()
-
-    if not user:
-        raise TagsNotFound()
-    
-    user_tags : UserTag = user.user_tags
-    res = []
-
-    for tags_data in user_tags:
-        tag_id = tags_data.tag_id
-
-        curr_tag : Tag = db.query(Tag).filter(Tag.tag_id == tag_id).first()
-        if not curr_tag:
-            continue
-        res.append({
-            'tag_name': curr_tag.tag_name,
-            'tag_id' : curr_tag.tag_id
-
-        })
-
-    
-    return res
-
-
-
-
-# class User(Base):
-#     __tablename__ = "users"
-
-#     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid)
-#     email = Column(String, unique=True, nullable=False)
-#     created_at = Column(TIMESTAMP, server_default="NOW()")
-#     username = Column(String,  nullable=False)
-#     password = Column(String, nullable=False)
-#     google_id = Column(String, nullable=True)
-#     profile_path = Column(String, default='')
-
-#     user_tags: Mapped[list["UserTag"]] = relationship("UserTag", back_populates="user")
 def delete_user_tags_service(user_id: UUID, tag_ids: list[UUID], db: Session):
-    # We use a bulk delete statement for efficiency
+    # We delete directly from the Tag table. 
+    # Ensuring user_id matches prevents a user from deleting someone else's tags.
     stmt = (
-        delete(UserTag)
-        .where(UserTag.user_id == user_id)
-        .where(UserTag.tag_id.in_(tag_ids))
+        delete(Tag)
+        .where(Tag.user_id == user_id)
+        .where(Tag.tag_id.in_(tag_ids))
     )
     
     result = db.execute(stmt)
@@ -131,3 +67,31 @@ def delete_user_tags_service(user_id: UUID, tag_ids: list[UUID], db: Session):
         "status": "success", 
         "deleted_count": result.rowcount
     }
+
+def update_tag_service(user_id: UUID, tag_id: str, updated_tag_name: str, db: Session):
+    # Check ownership and existence in one query
+    target_tag = db.query(Tag).filter(
+        Tag.tag_id == tag_id, 
+        Tag.user_id == user_id
+    ).first()
+
+    if not target_tag:
+        # This replaces the need for UserTagRelationNotFound
+        raise TagNotFound()
+    
+    if target_tag.tag_name == updated_tag_name:
+        return {'status': 'success'}
+    
+    # Check if the NEW name already exists for this user to avoid duplicates during update
+    name_check = db.query(Tag).filter(
+        Tag.tag_name == updated_tag_name, 
+        Tag.user_id == user_id
+    ).first()
+    
+    if name_check:
+        raise TagAlreadyExists()
+
+    target_tag.tag_name = updated_tag_name
+    db.commit()
+
+    return {'status': 'success'}

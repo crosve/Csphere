@@ -6,3 +6,9 @@ class TagsNotFound(Exception):
 
 class TagAlreadyExists(Exception):
     pass
+
+class TagNotFound(Exception):
+    pass
+
+class UserTagRelationNotFound(Exception):
+    pass

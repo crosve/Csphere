@@ -2,7 +2,6 @@
 import { act, useEffect, useState } from "react";
 import TagsLayout from "./TagsLayout";
 import { fetchToken } from "@/functions/user/UserData";
-import { CheckCircle2 } from "lucide-react"; // Optional: for a visual checkmark
 
 import {
   Popover,
@@ -51,19 +50,44 @@ function Page() {
 
     console.log("handling the handleSaveEdit");
 
-    setUsersTags((prev) => {
-      return prev.map((tag) => {
-        if (tag.tag_id === tag_id) {
-          return {
-            ...tag,
-            tag_name: targetTag.tag_name,
-          };
-        }
-        return tag;
-      });
-    });
+    //Do the api call to update the tag name
 
-    setTargetTagId("");
+    try {
+      const token = fetchToken();
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/tag/${tag_id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            tag_name: targetTag.tag_name,
+          }),
+        },
+      );
+
+      if (res.ok) {
+        const data = await res.json();
+        console.log("Returned data: ", data);
+        setUsersTags((prev) => {
+          return prev.map((tag) => {
+            if (tag.tag_id === tag_id) {
+              return {
+                ...tag,
+                tag_name: targetTag.tag_name,
+              };
+            }
+            return tag;
+          });
+        });
+
+        setTargetTagId("");
+      }
+    } catch (error) {
+      console.log("An error occured: ", error);
+    }
   };
 
   const handleEditTag = (tag_id: string) => {
@@ -300,7 +324,6 @@ function Page() {
                         tag_name: e.target.value,
                       })
                     }
-                    // onBlur={() => setTargetTagId("")}
                   />
                 ) : (
                   <span className="text-sm font-bold uppercase tracking-widest">

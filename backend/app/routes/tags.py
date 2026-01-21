@@ -10,10 +10,10 @@ from app.data_models.content import Content
 from app.data_models.content_item import ContentItem
 from app.data_models.content_ai import ContentAI
 
-from app.services.tag_services import create_tag_service, get_user_tags_service, delete_user_tags_service
-from app.schemas.tag import TagCreationData, TagDeleteData
+from app.services.tag_services import create_tag_service, get_user_tags_service, delete_user_tags_service, update_tag_service
+from app.schemas.tag import TagCreationData, TagDeleteData, TagUpdateData
 from app.db.database import get_db
-from app.exceptions.tag_exceptions import TagAlreadyExists
+from app.exceptions.tag_exceptions import TagAlreadyExists,  UserTagRelationNotFound, TagNotFound
 
 from app.utils.hashing import get_current_user_id
 from datetime import datetime
@@ -69,3 +69,24 @@ def delete_tags(tags : TagDeleteData, user_id: UUID = Depends(get_current_user_i
         logging.error(f"Failed to delete tags for user, {e}")
     
 
+
+@router.put("/tag/{tag_id}")
+def update_tag(tag_id: str, updateTagBody : TagUpdateData, user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
+    try:
+
+        return update_tag_service(user_id=user_id, tag_id=tag_id, updated_tag_name=updateTagBody.tag_name, db= db)
+
+    except  UserTagRelationNotFound:
+        logging.error("UserTag relation does not exists between user and tag")
+        raise HTTPException(
+            status_code=400
+        )
+
+    except TagNotFound:
+        logging.error("Tag not found in table")
+        raise HTTPException(
+            status_code=400
+        )
+    
+    except Exception as e:
+        logging.error(f"Failed to update the users tags, {e}")

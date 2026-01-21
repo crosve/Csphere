@@ -7,3 +7,7 @@ class TagCreationData(BaseModel):
 
 class TagDeleteData(BaseModel):
     tag_ids : list[str] = []
+
+
+class TagUpdateData(BaseModel):
+    tag_name: str
