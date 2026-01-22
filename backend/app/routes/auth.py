@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
-S3_BUCKET_NAME = settings.S3_BUCKET_NAME
+BUCKET_NAME = settings.BUCKET_NAME
 GOOGLE_REDIRECT_URI = settings.GOOGLE_REDIRECT_URI
 GOOGLE_CLIENT_ID = settings.GOOGLE_CLIENT_ID
 GOOGLE_CLIENT_SECRET = settings.GOOGLE_CLIENT_SECRET
