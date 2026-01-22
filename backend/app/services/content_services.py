@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 import logging
 from sqlalchemy.orm import joinedload
 from dateutil.parser import isoparse
+from app.core.settings import get_settings
 
 
 from sqlalchemy.orm import Session
@@ -30,6 +31,7 @@ from app.exceptions.content_exceptions import EmbeddingManagerNotFound, NoMatche
 import logging
 
 logger = logging.getLogger(__name__)
+settings = get_settings()
 
 def search_content(*, db : Session, query: str,user: User):
 
@@ -77,10 +79,10 @@ def search_content(*, db : Session, query: str,user: User):
 
 
 def push_to_activemq(message: str):
-    ACTIVEMQ_URL=os.getenv('ACTIVEMQ_URL')
-    ACTIVEMQ_QUEUE= os.getenv('ACTIVEMQ_QUEUE')
-    ACTIVEMQ_USER= os.getenv('ACTIVEMQ_USER')
-    ACTIVEMQ_PASS= os.getenv('ACTIVEMQ_PASS')
+    ACTIVEMQ_URL=settings.ACTIVEMQ_URL
+    ACTIVEMQ_QUEUE= settings.ACTIVEMQ_QUEUE
+    ACTIVEMQ_USER= settings.ACTIVEMQ_USER
+    ACTIVEMQ_PASS= settings.ACTIVEMQ_PASS
 
     try:
         url = f"{ACTIVEMQ_URL}/api/message/{quote(ACTIVEMQ_QUEUE)}?type=queue"

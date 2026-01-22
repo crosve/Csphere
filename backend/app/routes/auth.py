@@ -3,23 +3,22 @@ from fastapi.responses import RedirectResponse, JSONResponse
 from app.db.database import get_db
 from app.data_models.user import User
 from app.functions.AWS_s3 import  get_presigned_url
+from app.core.settings import get_settings
 from app.utils.hashing import create_access_token
 from sqlalchemy.orm import Session
 from urllib.parse import urlencode
 import logging
-
+import httpx
+import os
 
 logger = logging.getLogger(__name__) 
 
-import httpx
+settings = get_settings()
 
-
-import os
-
-BUCKET_NAME = os.environ.get('BUCKET_NAME')
-GOOGLE_REDIRECT_URI = os.environ.get('GOOGLE_REDIRECT_URI')
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+S3_BUCKET_NAME = settings.S3_BUCKET_NAME
+GOOGLE_REDIRECT_URI = settings.GOOGLE_REDIRECT_URI
+GOOGLE_CLIENT_ID = settings.GOOGLE_CLIENT_ID
+GOOGLE_CLIENT_SECRET = settings.GOOGLE_CLIENT_SECRET
 
 
 router = APIRouter(
@@ -49,7 +48,7 @@ def handle_google_session():
         return RedirectResponse(google_auth_url)
     
     except Exception as e:
-        logging.error(f"OAuth Initiation Error: {e}")
+        logger.error(f"OAuth Initiation Error: {e}")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Authentication service temporarily unavailable"

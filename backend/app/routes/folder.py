@@ -15,11 +15,14 @@ from app.services.folder import update_folder_metadata, create_user_folder, addI
 from app.db.database import get_db
 from app.schemas.folder import  FolderDetails, FolderItem, FolderMetadata, RemoveContentPayload
 from app.exceptions.folder import FolderNotFound, FolderItemNotFound
-from app.core.logging import logger
 from app.utils.hashing import get_current_user_id
 from datetime import datetime
 from uuid import uuid4
 from uuid import UUID
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     tags=['folder'],

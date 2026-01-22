@@ -1,9 +1,9 @@
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from app.core.settings import Settings 
+from app.core.settings import get_settings
 
-settings = Settings()
+settings = get_settings()
 
 try:
     engine = create_engine(

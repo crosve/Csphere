@@ -1,14 +1,16 @@
 import os
 from openai import OpenAI
 from app.core.logging import logger
-from app.core.settings import Settings
+from app.core.settings import get_settings
+
+settings = get_settings()
 
 class Summarizer:
     def __init__(self, model: str = "openrouter/auto:floor", system_prompt: str | None = None):
         self.model = model
         self.client = OpenAI(
             base_url="https://openrouter.ai/api/v1",
-            api_key=Settings().OPENROUTER_API_KEY,
+            api_key=settings.OPENROUTER_API_KEY,
         )
         self.system_prompt = system_prompt or (
             "You are a concise technical summarizer. "

@@ -1,25 +1,22 @@
-from dotenv import load_dotenv
+from app.core.settings import get_settings
+from urllib.parse import urlparse
 import os
 import boto3
 
 
-load_dotenv()
-
-BUCKET_NAME = os.environ.get('BUCKET_NAME')
-
-from urllib.parse import urlparse
+settings = get_settings()
+BUCKET_NAME = settings.BUCKET_NAME
 
 
 s3 = boto3.client(
     "s3",
     region_name="us-east-1",  # change this to your S3 region
-    aws_access_key_id=os.environ.get("AWS_ACCESS_KEY"),
-    aws_secret_access_key=os.environ.get("AWS_SECRET_KEY"),
+    aws_access_key_id=settings.AWS_ACCESS_KEY,
+    aws_secret_access_key=settings.AWS_SECRET_KEY,
 )
 
 def extract_s3_key(s3_url: str) -> str:
     parsed = urlparse(s3_url)
-    print("parsed values: ", parsed)
     # parsed.path is like '/pfps/58b59edcb9034a9db9a488185f56d5af_pixil-frame-0.png'
     return parsed.path.lstrip('/')  # Remove leading slash
 
@@ -33,10 +30,5 @@ def get_presigned_url(profile_url: str) -> str:
         "Key": extract_s3_key(profile_url)
     },
     ExpiresIn=3600  # seconds = 1 hour
-
-   
-    )
-
-    print("pre signed url: ", presigned_url)
-    
+    )      
     return  presigned_url

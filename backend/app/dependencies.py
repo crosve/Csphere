@@ -19,11 +19,13 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 from pathlib import Path
+from app.core.settings import get_settings
 dotenv_path = Path(__file__).resolve().parent.parent / "app"/ "api" / ".env"
 print("Loading .env file from:", dotenv_path)
 load_dotenv(dotenv_path)
 
-SECRET_KEY = os.getenv('SECRET_KEY')
+settings = get_settings()
+SECRET_KEY = settings.SECRET_KEY
 print("Secret key from .env within dependencies file:", SECRET_KEY)
 
 if isinstance(SECRET_KEY, str):

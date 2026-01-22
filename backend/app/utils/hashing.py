@@ -6,7 +6,7 @@ from typing import Annotated
 from uuid import UUID
 from jwt import exceptions as jwt_exceptions
 
-from app.core.settings import Settings
+from app.core.settings import get_settings
 
 from pydantic import BaseModel
 
@@ -16,7 +16,7 @@ import os
 import jwt
 
 
-settings = Settings()
+settings = get_settings()
 
 SECRET_KEY = settings.SECRET_KEY
 print("Secret key from .env within hashing file:", SECRET_KEY)

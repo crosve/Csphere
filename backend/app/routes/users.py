@@ -6,25 +6,29 @@ from app.db.database import get_db
 from app.schemas.user import UserCreate, UserSignIn, UserGoogleCreate, UserGoogleSignIn
 from app.utils.hashing import get_password_hash, verify_password, create_access_token, get_current_user_id
 from app.data_models.user import User
-from app.core.logging import logger
+from app.core.settings import get_settings
 from app.functions.AWS_s3 import extract_s3_key, get_presigned_url
 from datetime import datetime
 from uuid import uuid4
 from uuid import UUID
 import boto3
+import logging
 import os
+
+logger = logging.getLogger(__name__)
 
 
 router = APIRouter(prefix="/user", tags=['user'])
 
-BUCKET_NAME = os.environ.get('BUCKET_NAME')
+settings = get_settings()
+settings.BUCKET_NAME = settings.BUCKET_NAME
 
 
 s3 = boto3.client(
     "s3",
     region_name="us-east-1",  
-    aws_access_key_id=os.environ.get("AWS_ACCESS_KEY"),
-    aws_secret_access_key=os.environ.get("AWS_SECRET_KEY"),
+    aws_access_key_id=settings.AWS_ACCESS_KEY,
+    aws_secret_access_key=settings.AWS_SECRET_KEY,
 )
 
 @router.post("/signup")
@@ -101,7 +105,7 @@ def get_profile_picture(profile_url: str = Query(...), user_id: UUID = Depends(g
         presigned_url = s3.generate_presigned_url(
         ClientMethod="get_object",
         Params={
-            "Bucket": BUCKET_NAME,
+            "Bucket": settings.BUCKET_NAME,
             "Key": extract_s3_key(profile_url)
         },
         ExpiresIn=3600  # seconds = 1 hour
@@ -138,7 +142,7 @@ def upload_user_media(pfp: UploadFile = File(...), user_id: UUID = Depends(get_c
     try:
         s3.upload_fileobj(
             pfp.file,
-            BUCKET_NAME,
+            settings.BUCKET_NAME,
             filename,
             ExtraArgs={
             
@@ -146,7 +150,7 @@ def upload_user_media(pfp: UploadFile = File(...), user_id: UUID = Depends(get_c
             },
         )
 
-        image_url = f"https://{BUCKET_NAME}.s3.amazonaws.com/{filename}"
+        image_url = f"https://{settings.BUCKET_NAME}.s3.amazonaws.com/{filename}"
 
         presigned_url = get_presigned_url(image_url)
         #save to the users DB 

@@ -4,7 +4,6 @@ from app.data_models.content import Content
 from app.data_models.content_item import ContentItem
 from app.schemas.content import ContentCreate, ContentSavedByUrl, ContentWithSummary, TabRemover, NoteContentUpdate, UserSavedContentResponse
 from app.data_models.user import User
-from app.core.logging import logger
 
 from app.utils.hashing import get_current_user_id
 from app.utils.user import get_current_user
@@ -19,6 +18,10 @@ from app.services.content_services import (search_content,
  delete_content, get_recent_saved_content)
 
 from app.exceptions.content_exceptions import EmbeddingManagerNotFound, NoMatchedContent, NotesNotFound, ContentItemNotFound, ContentNotFound
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 router = APIRouter(
