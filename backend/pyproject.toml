@@ -90,6 +90,7 @@ dependencies = [
     "pycparser==2.22",
     "pydantic==2.11.7",
     "pydantic-core==2.33.2",
+    "pydantic-settings>=2.12.0",
     "pygments==2.19.1",
     "pyjwt==2.10.1",
     "pypdf==5.6.1",

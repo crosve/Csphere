@@ -6,22 +6,19 @@ from typing import Annotated
 from uuid import UUID
 from jwt import exceptions as jwt_exceptions
 
+from app.core.settings import Settings
 
+from pydantic import BaseModel
+
+from dotenv import load_dotenv
+from pathlib import Path
+import os
 import jwt
 
 
+settings = Settings()
 
-from pydantic import BaseModel
-import os
-from dotenv import load_dotenv
-
-
-from pathlib import Path
-dotenv_path = Path(__file__).resolve().parent.parent / "api" / ".env"
-print("Loading .env file from:", dotenv_path)
-load_dotenv(dotenv_path)
-
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = settings.SECRET_KEY
 print("Secret key from .env within hashing file:", SECRET_KEY)
 
 if isinstance(SECRET_KEY, str):

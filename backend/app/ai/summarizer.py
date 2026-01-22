@@ -1,13 +1,14 @@
 import os
 from openai import OpenAI
-
+from app.core.logging import logger
+from app.core.settings import Settings
 
 class Summarizer:
     def __init__(self, model: str = "openrouter/auto:floor", system_prompt: str | None = None):
         self.model = model
         self.client = OpenAI(
             base_url="https://openrouter.ai/api/v1",
-            api_key=os.getenv("OPENROUTER_API_KEY"),
+            api_key=Settings().OPENROUTER_API_KEY,
         )
         self.system_prompt = system_prompt or (
             "You are a concise technical summarizer. "
@@ -27,7 +28,5 @@ class Summarizer:
             return response.choices[0].message.content.strip()
         except Exception as e:
             # Preserve behavior: return None on failure
-            import logging
-
-            logging.error(f"OpenRouter summarization failed: {e}")
+            logger.error(f"OpenRouter summarization failed: {e}")
             return None

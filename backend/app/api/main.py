@@ -2,31 +2,18 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.requests import Request
-
+from app.core.logging import setup_logging, logger
 from dotenv import load_dotenv
 import os 
-import logging
-import sys
-
 
 from app.routes import user_router, folder_router, auth_router, content_router, setting_router, tag_router
 
 # Load environment variables from a .env file
 load_dotenv()
 
-
 app = FastAPI()
 
-logger = logging.getLogger(__name__)
-
-# StreamHandler
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout)]
-)
-logger.info('API is starting up')
-
+setup_logging()
 
 # Update CORS origins
 origins = ["*"]

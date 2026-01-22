@@ -1,10 +1,10 @@
-import logging
-
 from uuid import UUID
 from sqlalchemy.orm import Session
 from sqlalchemy import exists
 from uuid import uuid4
 from datetime import datetime, timezone
+
+from app.core.logging import logger
 
 #data models for the DB 
 from app.data_models.content import Content
@@ -24,7 +24,6 @@ from app.embeddings.semantic_cache import SemanticCache
 from collections import defaultdict
 
 load_dotenv()
-logger = logging.getLogger(__name__)
 
 class ContentEmbeddingManager:
     '''

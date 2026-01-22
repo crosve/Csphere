@@ -4,7 +4,7 @@ from app.data_models.content import Content
 from app.data_models.content_item import ContentItem
 from app.schemas.content import ContentCreate, ContentSavedByUrl, ContentWithSummary, TabRemover, NoteContentUpdate, UserSavedContentResponse
 from app.data_models.user import User
-import logging
+from app.core.logging import logger
 
 from app.utils.hashing import get_current_user_id
 from app.utils.user import get_current_user
@@ -22,14 +22,13 @@ from app.exceptions.content_exceptions import EmbeddingManagerNotFound, NoMatche
 
 
 router = APIRouter(
-    # prefix="/content"
+    prefix="/content",
+    tags=["content"],
 )
 
-logger = logging.getLogger(__name__) 
 
 
-
-@router.get("/content/search", response_model=UserSavedContentResponse, status_code=status.HTTP_200_OK)
+@router.get("/search", response_model=UserSavedContentResponse, status_code=status.HTTP_200_OK)
 def search(query: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
 
     try:
@@ -48,7 +47,7 @@ def search(query: str, user: User = Depends(get_current_user), db: Session = Dep
             detail="No Matched content found for this search query"
         )
     except Exception as e:
-        logging.error(f"Search for query {query} failed. Error is as follows: {e}", exc_info=True)
+        logger.error(f"Search for query {query} failed. Error is as follows: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Search is currently unavailable, please try again"
@@ -56,7 +55,7 @@ def search(query: str, user: User = Depends(get_current_user), db: Session = Dep
   
 
 
-@router.post("/content/save")
+@router.post("/save")
 def save_content(content: ContentCreate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     try:
         _enqueue_new_content(
@@ -76,7 +75,7 @@ def save_content(content: ContentCreate, user: User = Depends(get_current_user),
         return {'status': "unsuccessful", 'error': "Failed to save bookmark from chrome extension"}
 
 
-@router.post("/content/save/url")
+@router.post("/save/url")
 def save_content_by_url(content: ContentSavedByUrl, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     try:
         safe_url = ensure_safe_url(content.url)
@@ -84,7 +83,7 @@ def save_content_by_url(content: ContentSavedByUrl, user: User = Depends(get_cur
         html = ''
 
         title =safe_url    
-        logging.info(f"safe url being set: {safe_url}")
+        logger.info(f"safe url being set: {safe_url}")
 
         _enqueue_new_content(
             url=safe_url if safe_url else content.url,
@@ -103,7 +102,7 @@ def save_content_by_url(content: ContentSavedByUrl, user: User = Depends(get_cur
 
     
 
-@router.get("/content/unread/count", status_code=status.HTTP_200_OK)
+@router.get("/unread/count", status_code=status.HTTP_200_OK)
 def get_unread_count(user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
     try:
         return get_total_unread_count(user_id=user_id, db=db)
@@ -119,7 +118,7 @@ def get_unread_count(user_id: UUID = Depends(get_current_user_id), db: Session =
 
 
 
-@router.get("/content/unread", response_model=UserSavedContentResponse, status_code=status.HTTP_200_OK)
+@router.get("/unread", response_model=UserSavedContentResponse, status_code=status.HTTP_200_OK)
 def get_unread_content(cursor: str = None, user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
 
 
@@ -141,7 +140,7 @@ def get_unread_content(cursor: str = None, user_id: UUID = Depends(get_current_u
 
 
 
-@router.get("/content", response_model=UserSavedContentResponse)
+@router.get("/", response_model=UserSavedContentResponse)
 def get_user_content(
     cursor: str = None,
     categories: list[str] = None, 
@@ -171,7 +170,7 @@ def get_user_content(
 
     
 
-@router.post("/content/update/notes")
+@router.post("/update/notes")
 def updatenote(data: NoteContentUpdate, user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
 
 
@@ -180,12 +179,11 @@ def updatenote(data: NoteContentUpdate, user_id: UUID = Depends(get_current_user
     
     except NotesNotFound as e:
         db.rollback()
-        logging.info("Notes for user was not found")
+        logger.info("Notes for user was not found")
         raise HTTPException(status_code=404, detail=str(e))
     
     except Exception as e:
         db.rollback()
-
         logger.error(f"User notes failed to update: {e}")
         raise HTTPException(
             status_code=500,
@@ -193,7 +191,7 @@ def updatenote(data: NoteContentUpdate, user_id: UUID = Depends(get_current_user
         )
 
 
-@router.post("/content/tab", status_code=200)
+@router.post("/tab", status_code=200)
 def tab_user_content(content: TabRemover,user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
 
     try:
@@ -208,7 +206,7 @@ def tab_user_content(content: TabRemover,user_id: UUID = Depends(get_current_use
 
     except Exception as e:
         db.rollback()
-        logging.error(f"error in the backend: {e}")
+        logger.error(f"error in the backend: {e}")
         raise HTTPException(
             status_code=500, 
             detail="An error occured when trying to tab the content for the user"
@@ -217,13 +215,13 @@ def tab_user_content(content: TabRemover,user_id: UUID = Depends(get_current_use
 
 
 
-@router.post("/content/untab", status_code=200)
+@router.post("/untab", status_code=200)
 def untab_user_content(content: TabRemover,user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
     try:
         return untabContent(content=content, user_id=user_id, db=db)
 
     except ContentItemNotFound as e:
-        logging.error(f"Content item could not be untabbed because it was not found: {e}")
+        logger.error(f"Content item could not be untabbed because it was not found: {e}")
         db.rollback()
         raise HTTPException(
             status_code=400,
@@ -233,7 +231,7 @@ def untab_user_content(content: TabRemover,user_id: UUID = Depends(get_current_u
 
     except Exception as e:
         db.rollback()
-        logging.error(f"Error occured trying to untab for user {user_id}: {e}")
+        logger.error(f"Error occured trying to untab for user {user_id}: {e}")
 
         raise HTTPException(
             status_code=500,
@@ -243,14 +241,14 @@ def untab_user_content(content: TabRemover,user_id: UUID = Depends(get_current_u
         
 
 
-@router.delete("/content/{content_id}", status_code=204)
+@router.delete("/{content_id}", status_code=204)
 def delete_content(content_id: UUID, user_id: UUID = Depends(get_current_user_id), db: Session=Depends(get_db)):
 
     try:
         return delete_content(content_id=content_id, user_id=user_id, db=db)
 
     except Exception as e:
-        logging.error(f"Failed to delete content: {e}")
+        logger.error(f"Failed to delete content: {e}")
         db.rollback()
         HTTPException(
             status_code=500,
@@ -259,7 +257,7 @@ def delete_content(content_id: UUID, user_id: UUID = Depends(get_current_user_id
 
 
 
-@router.post("/user/content/{content_id}")
+@router.post("/read/{content_id}")
 def update_read(content_id: UUID, user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
     content = db.query(ContentItem).filter(ContentItem.content_id == content_id, ContentItem.user_id == user_id).first()
 
@@ -273,7 +271,7 @@ def update_read(content_id: UUID, user_id: UUID = Depends(get_current_user_id), 
     return {"success": True}
 
 
-@router.get("/content/{content_id}", response_model=ContentWithSummary)
+@router.get("/{content_id}", response_model=ContentWithSummary)
 def get_piece_content(content_id: UUID, user_id: UUID = Query(...), db: Session = Depends(get_db)):
     content = db.query(Content).filter(Content.content_id == content_id, Content.user_id == user_id).first()
 
@@ -282,13 +280,13 @@ def get_piece_content(content_id: UUID, user_id: UUID = Query(...), db: Session 
     return content
 
 
-@router.post("/content/recent", response_model=list[ContentWithSummary], status_code=200)
+@router.post("/recent", response_model=list[ContentWithSummary], status_code=200)
 def get_recent_content(user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
     try:
         return get_recent_saved_content(user_id=user_id, db=db)
     
     except ContentNotFound:
-        logging.error(f"Couldn't find any content recenty saved for user id {user_id}")
+        logger.error(f"Couldn't find any content recenty saved for user id {user_id}")
         raise HTTPException(
             status_code=204,
             detail="No content found for user"

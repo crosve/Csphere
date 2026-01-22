@@ -1,5 +1,6 @@
 import os
 from typing import List
+from app.core.settings import Settings
 from openai import OpenAI
 
 

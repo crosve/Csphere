@@ -6,27 +6,16 @@ from app.db.database import get_db
 from app.schemas.user import UserCreate, UserSignIn, UserGoogleCreate, UserGoogleSignIn
 from app.utils.hashing import get_password_hash, verify_password, create_access_token, get_current_user_id
 from app.data_models.user import User
+from app.core.logging import logger
 from app.functions.AWS_s3 import extract_s3_key, get_presigned_url
 from datetime import datetime
 from uuid import uuid4
 from uuid import UUID
 import boto3
-import logging
-
-
-
 import os
 
 
-
-router = APIRouter(
-    prefix="/user",
-    tags=['user'],
-    dependencies=[]
-)
-
-
-logger = logging.getLogger(__name__) 
+router = APIRouter(prefix="/user", tags=['user'])
 
 BUCKET_NAME = os.environ.get('BUCKET_NAME')
 
@@ -248,9 +237,9 @@ def google_login(user : UserGoogleSignIn, db : Session =  Depends(get_db)):
 
 
 
-
+@router.post("/browser/login") # aliasing login from form via extension, generalizing the name to be cross-browser compatible
 @router.post("/chrome/login")
-def chrome_login(user: UserSignIn,  db: Session = Depends(get_db)):
+def chrome_login(user: UserSignIn, db: Session = Depends(get_db)):
     try:
         if not user:
             raise HTTPException(status_code=400, detail="Invalid user data")

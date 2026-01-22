@@ -1,26 +1,25 @@
-import os
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from dotenv import load_dotenv
+from app.core.settings import Settings 
 
-load_dotenv()
-
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-if DATABASE_URL.startswith('postgres://'):
-    DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
-print("DB URL: ", DATABASE_URL)
+settings = Settings()
 
 try:
-    engine = create_engine(DATABASE_URL, connect_args={
+    engine = create_engine(
+        settings.DATABASE_URL, connect_args={
         "options": "-c timezone=UTC"
     })
     print("Connected")
 except Exception as e:
     print("Connection falied: ", e)
 
-# managing transactions and DB state
-SessionLocal = sessionmaker(bind=engine)
+
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine
+)
 
 #Initialize the base for all datamodels
 Base = declarative_base()

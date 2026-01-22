@@ -15,21 +15,15 @@ from app.services.folder import update_folder_metadata, create_user_folder, addI
 from app.db.database import get_db
 from app.schemas.folder import  FolderDetails, FolderItem, FolderMetadata, RemoveContentPayload
 from app.exceptions.folder import FolderNotFound, FolderItemNotFound
-
+from app.core.logging import logger
 from app.utils.hashing import get_current_user_id
 from datetime import datetime
 from uuid import uuid4
 from uuid import UUID
-import logging
-
-
 
 router = APIRouter(
     tags=['folder'],
 )
-
-logger = logging.getLogger(__name__) 
-
 
 
 @router.get("/folder")
@@ -97,7 +91,7 @@ def get_folder_metadata(folder_id : str, db: Session = Depends(get_db)):
 
 
     except Exception as e:
-        logging.error(f"Error occured trying to fet folder metadata: {e} ")
+        logger.error(f"Error occured trying to fet folder metadata: {e} ")
 
 
 from sqlalchemy.exc import SQLAlchemyError
@@ -111,7 +105,7 @@ def process_folder_metadata(
     db: Session = Depends(get_db),
 ):
     try:
-        logging.info(f"Folder metdata being processed: {metadata}")
+        logger.info(f"Folder metdata being processed: {metadata}")
         folder = update_folder_metadata(
             db=db,
             folder_id=folder_id,
