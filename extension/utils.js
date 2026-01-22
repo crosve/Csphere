@@ -1,56 +1,49 @@
-// polyfilling browser to ensure it exists in Chrome MV3
+// utils.js
 
-if (typeof browser == "undefined") {
-    window.browser = chrome;
+// 1. Safe Polyfill: Use 'self' instead of 'window'
+// In a Service Worker, 'self' refers to the ServiceWorkerGlobalScope.
+if (typeof browser === "undefined") {
+  self.browser = chrome;
 }
 
 /*
-cross-browser replacement for chrome.scripting.executeScript 
+Cross-browser/version replacement for executeScript 
 */
-
 function executeContentScript(tabId, file) {
-    // firefox's mv2 path
-    if (browser.tabs && browser.tabs.executeScript) {
-        return browser.tabs.executeScript({
-            tabId,
-            files: [file]
-        })
-    }
+  // Chrome MV3 path (Scripting API)
+  if (chrome.scripting && chrome.scripting.executeScript) {
+    return chrome.scripting.executeScript({
+      target: { tabId: tabId },
+      files: [file],
+    });
+  }
 
-    // chrome's mv3 path
-    if (chrome.scripting && chrome.scripting.executeScript) {
-        return chrome.scripting.executeScript({
-            target: { tabId },
-            files: [file]
-        })
-    }
+  // Fallback/Firefox MV2 path
+  if (browser.tabs && browser.tabs.executeScript) {
+    return browser.tabs.executeScript(tabId, {
+      file: file,
+    });
+  }
 
-    console.error("No comptabile executeScript API found");
+  console.error("No compatible executeScript API found");
 }
 
 /*
-getting active tab across browsers
+Getting active tab across browsers
 */
-
 async function getActiveTab() {
-    if (browser.tabs && browser.tabs.query) {
-        const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-        return tab;
-    }
+  // Chrome MV3 uses promises for the 'tabs' API
+  if (chrome.tabs && chrome.tabs.query) {
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    return tab;
+  }
 
-    if (chrome.tabs && chrome.tabs.query) {
-        return new Promise(resolve => {
-            chrome.tabs.query({ active: true }, tabs => resolve(tabs[0]));
-        });
-    }
-
-    console.error("No comptabile getActiveTab API found");
-    return null;
+  return null;
 }
 
-// exposing the functions globally for all scripts
-
-window.utils = {
-    executeContentScript,
-    getActiveTab
-};
+// 2. Exposing functions globally
+// We attach to 'self' so both Service Workers and Window contexts can see it.
+export const utils = { executeContentScript, getActiveTab };

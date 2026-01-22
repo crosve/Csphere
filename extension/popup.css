@@ -500,3 +500,102 @@ body {
     width: 320px;
   }
 }
+
+
+
+.folders-grid {
+  display: grid;
+  grid-template-columns: 1fr ;
+  gap: 12px;
+  padding: 10px;
+}
+
+.folder-card {
+  background: #ffffff;
+  border: 1px solid #e1e4e8;
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  transition: transform 0.1s, border-color 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.folder-card:hover {
+  border-color: #0a0a0a;
+  /* background: #f8fbff; */
+  /* transform: translateY(-2px); */
+}
+
+#bookmark-card-folder-card {
+  display: inline-block; /* Allows padding and alignment */
+  font-size: 10px;
+  font-weight: 600;
+  color: #7f8994; /* Matches your folder icon color */
+  background: #f0f7ff; /* Soft blue background */
+  padding: 2px 4px;
+  border-radius: 4px;
+  margin-top: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  float: right; /* Aligns it to the right as you requested */
+}
+
+/* Clearfix for the parent card so the float doesn't break layout */
+.bookmark-card {
+  position: relative;
+  overflow: hidden;
+  padding-bottom: 30px; /* Space for the folder badge */
+}
+
+.folder-card-name {
+  display: block;
+  font-weight: 600;
+  color: #24292e;
+  margin-top: 8px;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.folder-card-count {
+  font-size: 11px;
+  color: #586069;
+}
+
+.folder-card-date {
+  font-size: 9px;
+  color: #a3aab1;
+  margin-top: 8px;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  color: #4A90E2;
+  cursor: pointer;
+  padding: 5px 0;
+  font-weight: 500;
+}
+
+.skeleton-loader {
+  height: 60px;
+  background: #f6f8fa;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.folder-detail-header{
+  margin-bottom: 10px;
+}
