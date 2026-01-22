@@ -15,7 +15,7 @@ class Settings(BaseSettings):
 
     AWS_ACCESS_KEY: str
     AWS_SECRET_KEY: str
-    S3_BUCKET_NAME: str
+    BUCKET_NAME: str
 
     GOOGLE_CLIENT_ID: str
     GOOGLE_CLIENT_SECRET: str
