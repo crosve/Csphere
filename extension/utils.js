@@ -1,31 +1,28 @@
 // polyfilling browser to ensure it exists in Chrome MV3
 
-if (typeof browser == "undefined") {
-    window.browser = chrome;
+const root = typeof window !== "undefined" ? window : globalThis;
+if (typeof root.browser === "undefined" && typeof root.chrome !== "undefined") {
+  root.browser = root.chrome;
 }
-
 /*
 cross-browser replacement for chrome.scripting.executeScript 
 */
 
 function executeContentScript(tabId, file) {
-    // firefox's mv2 path
-    if (browser.tabs && browser.tabs.executeScript) {
-        return browser.tabs.executeScript({
-            tabId,
-            files: [file]
-        })
-    }
+  // Firefox MV2
+  if (root.browser?.tabs?.executeScript) {
+    return root.browser.tabs.executeScript(tabId, { file });
+  }
 
-    // chrome's mv3 path
-    if (chrome.scripting && chrome.scripting.executeScript) {
-        return chrome.scripting.executeScript({
-            target: { tabId },
-            files: [file]
-        })
-    }
+  // Chrome MV3
+  if (root.chrome?.scripting?.executeScript) {
+    return root.chrome.scripting.executeScript({
+      target: { tabId },
+      files: [file],
+    });
+  }
 
-    console.error("No comptabile executeScript API found");
+  console.error("No compatible executeScript API found");
 }
 
 /*
@@ -33,24 +30,24 @@ getting active tab across browsers
 */
 
 async function getActiveTab() {
-    if (browser.tabs && browser.tabs.query) {
-        const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-        return tab;
-    }
+  // Firefox / polyfilled "browser" path
+  if (root.browser?.tabs?.query) {
+    const [tab] = await root.browser.tabs.query({ active: true, currentWindow: true });
+    return tab;
+  }
 
-    if (chrome.tabs && chrome.tabs.query) {
-        return new Promise(resolve => {
-            chrome.tabs.query({ active: true }, tabs => resolve(tabs[0]));
-        });
-    }
+  // Chrome fallback
+  if (root.chrome?.tabs?.query) {
+    return new Promise((resolve) => {
+      root.chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => resolve(tabs[0]));
+    });
+  }
 
-    console.error("No comptabile getActiveTab API found");
-    return null;
+  console.error("No compatible getActiveTab API found");
+  return null;
 }
 
-// exposing the functions globally for all scripts
-
-window.utils = {
-    executeContentScript,
-    getActiveTab
+root.utils = {
+  executeContentScript,
+  getActiveTab,
 };

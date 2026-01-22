@@ -1,5 +1,4 @@
 import { BACKEND_URL, DEPLOYED } from "./config.dev.js";
-importScripts("utils.js");
 
 
 const backend_url = DEPLOYED ? BACKEND_URL : "http://127.0.0.1:8000";
