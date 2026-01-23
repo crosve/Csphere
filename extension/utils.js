@@ -1,13 +1,11 @@
 // polyfilling browser to ensure it exists in Chrome MV3
 
-const root = typeof window !== "undefined" ? window : globalThis;
-if (typeof root.browser === "undefined" && typeof root.chrome !== "undefined") {
-  root.browser = root.chrome;
+if (typeof browser == "undefined") {
+  window.browser = chrome;
 }
 /*
-cross-browser replacement for chrome.scripting.executeScript 
+Cross-browser/version replacement for executeScript 
 */
-
 function executeContentScript(tabId, file) {
   // Firefox MV2
   if (root.browser?.tabs?.executeScript) {
@@ -26,28 +24,30 @@ function executeContentScript(tabId, file) {
 }
 
 /*
-getting active tab across browsers
+Getting active tab across browsers
 */
-
 async function getActiveTab() {
-  // Firefox / polyfilled "browser" path
-  if (root.browser?.tabs?.query) {
-    const [tab] = await root.browser.tabs.query({ active: true, currentWindow: true });
+  if (browser.tabs && browser.tabs.query) {
+    const [tab] = await browser.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
     return tab;
   }
 
-  // Chrome fallback
-  if (root.chrome?.tabs?.query) {
+  if (chrome.tabs && chrome.tabs.query) {
     return new Promise((resolve) => {
-      root.chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => resolve(tabs[0]));
+      chrome.tabs.query({ active: true }, (tabs) => resolve(tabs[0]));
     });
   }
 
-  console.error("No compatible getActiveTab API found");
+  console.error("No comptabile getActiveTab API found");
   return null;
 }
 
-root.utils = {
+// exposing the functions globally for all scripts
+
+self.utils = {
   executeContentScript,
   getActiveTab,
 };

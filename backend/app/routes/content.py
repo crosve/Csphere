@@ -68,6 +68,7 @@ def save_content(content: ContentCreate, user: User = Depends(get_current_user),
                 html=content.html,
                 user_id=user.id,
                 notes=content.notes,
+                tags=content.tags,
                 folder_id=content.folder_id,
             )
 
@@ -126,7 +127,7 @@ def get_unread_content(cursor: str = None, user_id: UUID = Depends(get_current_u
 
 
     try:
-        return get_unread_content_service(cursor=cursor, user_id=user_id, db=db)
+        return get_unread_content_service(cursor=cursor, filter_category_names=[], user_id=user_id, db=db)
 
     #catches the previous message we're bubbling up
     except ValueError as e:
@@ -153,7 +154,7 @@ def get_user_content(
     
 
     try:
-        return get_content_service(cursor=cursor, user_id=user_id, db=db, categories=categories)
+        return get_content_service(cursor=cursor, user_id=user_id, db=db, filter_category_names=categories)
     
     except ValueError as e:
         db.rollback()

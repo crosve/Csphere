@@ -40,3 +40,4 @@ class MessageSchema(BaseModel):
     user_id: str 
     notes: Optional[str] = None  
     folder_id: Optional[str] = 'default'  
+    tag_ids: Optional[list[str]] = []

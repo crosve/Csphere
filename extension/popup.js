@@ -1,147 +1,590 @@
 import { BACKEND_URL, DEPLOYED } from "./config.dev.js";
 
+/** * ==========================================
+ * STATE MANAGEMENT
+ * ========================================== */
+const BASE_URL = DEPLOYED ? BACKEND_URL : "http://127.0.0.1:8000";
+const appContainer = document.getElementById("app");
 
-const backend_url = DEPLOYED ? BACKEND_URL : "http://127.0.0.1:8000";
-const app = document.getElementById("app");
-let selectedFolder = "default";
-let currentTab = "bookmark";
-let tags = [];
-let recentBookmarks = [];
+let activeTab = "bookmark";
+let activeTags = [];
+let activeFolderId = "default";
+let cachedFolders = []; // Store folders here to use across tabs
+let recentBookmarksList = [];
 
-browser.storage.local.get(["csphere_user_token"], (result) => {
-  const token = result.csphere_user_token;
-  if (token === null || token === undefined) {
-    renderLoginInterface();
+let selectedViewFolder = null;
+let selectedViewFolderBookmarks = null; //Used to store the selected folder's bookmarks
+
+//Tag selection states
+let userTags = [];
+let selectedTags = [];
+
+/** * ==========================================
+ * INITIALIZATION
+ * ========================================== */
+async function init() {
+  const token = await getAuthToken();
+  console.log("current auth token: ", token);
+  if (!token || token === undefined) {
+    renderLoginView();
+    return;
   } else {
-    renderInterface();
+    renderMainView();
   }
-});
+  // 1. Render the UI frame immediately (User sees the app)
+  renderMainView();
 
-/** * ========================= * HTML Extraction Logic * ========================= */
-function extractHTMLFromPage() {
-  return new Promise(async (resolve) => {
-    const [tab] = await browser.tabs.query({
-      active: true,
-      currentWindow: true,
+  // 2. Fire API calls in the background (Don't 'await' them here)
+  // This starts the network requests while the user is looking at the Bookmark tab
+  fetchFolders();
+  fetchRecentBookmarks();
+}
+
+init();
+
+/** * ==========================================
+ * API SERVICES
+ * ========================================== */
+async function getAuthToken() {
+  return new Promise((resolve) => {
+    browser.storage.local.get(["csphere_user_token"], (res) => {
+      resolve(res.csphere_user_token);
     });
-    const listener = (request) => {
-      if (request.action === "htmlExtracted") {
-        browser.runtime.onMessage.removeListener(listener);
-        resolve({ html: request.html, tab });
-      }
-    };
-    browser.runtime.onMessage.addListener(listener);
-    utils.executeContentScript(tab.id, "content.js");
   });
 }
 
-/** * ========================= * Render Interfaces * ========================= */
-function renderInterface() {
-  app.innerHTML = `
+async function apiRequest(endpoint, method = "GET", body = null) {
+  const token = await getAuthToken();
+  const options = {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  };
+  if (body) options.body = JSON.stringify(body);
+
+  const response = await fetch(`${BASE_URL}${endpoint}`, options);
+  if (!response.ok) throw new Error(`API Error: ${response.status}`);
+  return response.json();
+}
+
+/** * ==========================================
+ * UI RENDERING (MAIN INTERFACE)
+ * ========================================== */
+function renderMainView() {
+  appContainer.innerHTML = `
     <div class="extension-popup">
-      <!-- Header -->
       <header class="popup-header">
-        <div class="header-left" >
-        <a href = "https://csphere.io/"  target="_blank"> 
-          <img class="logo" src="images/Csphere-icon-128.png" />
-        </a>
+        <div class="header-left">
+          <a href="https://csphere.io/" target="_blank"> 
+            <img class="logo" src="images/Csphere-icon-128.png" />
+          </a>
         </div>
-        <button class="logout-btn">logout</button>
+        <button id="logoutBtn" class="logout-btn">logout</button>
       </header>
 
-      <!-- Navigation Tabs -->
       <div class="tab-navigation">
-        <button class="tab-btn ${currentTab === "bookmark" ? "active" : ""
-    }" data-tab="bookmark">
-          Bookmark
-        </button>
-        <button class="tab-btn ${currentTab === "recent" ? "active" : ""
-    }" data-tab="recent">
-          Recent
-        </button>
-        <button class="tab-btn ${currentTab === "folders" ? "active" : ""
-    }" data-tab="folders">
-          Folders
-        </button>
+        <button class="tab-btn ${activeTab === "bookmark" ? "active" : ""}" data-tab="bookmark">Bookmark</button>
+        <button class="tab-btn ${activeTab === "recent" ? "active" : ""}" data-tab="recent">Recent</button>
+        <button class="tab-btn ${activeTab === "folders" ? "active" : ""}" data-tab="folders">Folders</button>
       </div>
 
-      <!-- Tab Content -->
       <div class="tab-content">
-        <!-- Bookmark Tab -->
-        <div class="tab-panel ${currentTab === "bookmark" ? "active" : ""
-    }" id="bookmark-panel">
+        <!-- Tab Pannel -->
+        <div class="tab-panel ${activeTab === "bookmark" ? "active" : ""}" id="bookmark-panel">
           <div class="scroll-area">
-            <!-- Notes Section -->
             <div class="notes-container">
               <textarea id="notesTextarea" class="notes-textarea" placeholder="Add any notes here..." maxlength="280"></textarea>
               <div class="character-counter"><span id="charCount">0</span>/280</div>
             </div>
 
-            <!-- Tags Section -->
             <div class="section">
-              <label class="section-label">Tags</label>
-              <div class="tags-container" id="tagsContainer"></div>
-              <div class="tag-input-container">
-                <input type="text" id="tagInput" class="tag-input" placeholder="Add tag..." />
-                <button id="addTagBtn" class="add-tag-btn">+</button>
+              <div class="tag-section">
+
+                <div class="multi-select-container">
+                  <label class="section-label">Selected Tags</label>
+                  
+                  <div id="selectedPills" class="pills-display">
+                    <span class="placeholder-text">No tags selected</span>
+                  </div>
+
+                  <div class="dropdown-wrapper">
+                    <select id="tagsDropdown" class="modern-select">
+                      <option value="" disabled selected>Choose a tag...</option>
+                   
+                    </select>
+                    <div class="select-hint">Tags are added as you click them</div>
+                  </div>
+                </div>
+                                
+           
               </div>
             </div>
 
-            <!-- Folders Section -->
             <div class="section">
-              <label class="section-label">Folders</label>
-              <div class="user-folders">
-                <select class="folder-select">
-                  <option value="default">none selected</option>
-
-                
-                </select>
-              </div>
+              <label class="section-label">Folder</label>
+              <select id="folderDropdown" class="folder-select">
+                <option value="default">none selected</option>
+              </select>
             </div>
           </div>
           
           <div class="action-bar">
-            <button id="bookMarkBtn" class="primary-button">Bookmark Page</button>
+            <button id="saveBookmarkBtn" class="primary-button">Bookmark Page</button>
           </div>
         </div>
 
-        <!-- Recent Tab -->
-        <div class="tab-panel ${currentTab === "recent" ? "active" : ""
-    }" id="recent-panel">
-          <div class="scroll-area" id="recentBookmarks">
-            <div class="empty-state">
-              <div class="empty-icon">📚</div>
-              <p>No recent bookmarks</p>
-              <span>Your recently saved bookmarks will appear here</span>
-            </div>
+
+        <!-- Recent bookmarks pannel-->
+        <div class="tab-panel ${activeTab === "recent" ? "active" : ""}" id="recent-panel">
+          <div class="scroll-area" id="recentListContainer">
+             <div class="empty-state"><p>Loading recent bookmarks...</p></div>
           </div>
         </div>
 
-        <!-- Folders Tab -->
-        <div class="tab-panel ${currentTab === "folders" ? "active" : ""
-    }" id="folders-panel">
-          <div class="scroll-area" id="foldersView">
-            <div class="empty-state">
-              <div class="empty-icon">📁</div>
-              <p>Loading folders...</p>
-            </div>
+        <!-- Recent folders pannel -->
+        <div class="tab-panel ${activeTab === "folders" ? "active" : ""}" id="folders-panel">
+          <div class="scroll-area" id="foldersListContainer">
+             <div class="empty-state"><p>Loading folders...</p></div>
           </div>
         </div>
       </div>
 
-      <p class="message-p"></p>
+      <p class="status-message"></p>
     </div>
   `;
 
-  setupTabNavigation();
-  setupTagSystem();
-  getRecentFolders();
-  loadRecentBookmarks();
-  setupBookmarkHandler();
-  setupCharacterCounter();
+  attachEventListeners();
+  loadContextualData();
 }
 
-function renderLoginInterface() {
+/** * ==========================================
+ * LOGIC & EVENTS
+ * ========================================== */
+function attachEventListeners() {
+  document.querySelectorAll(".tab-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      activeTab = btn.dataset.tab;
+      renderMainView();
+    });
+  });
+
+  document.getElementById("logoutBtn")?.addEventListener("click", () => {
+    browser.storage.local.remove("csphere_user_token", () => renderLoginView());
+  });
+
+  const textarea = document.getElementById("notesTextarea");
+  if (textarea) {
+    textarea.addEventListener("input", (e) => {
+      document.getElementById("charCount").textContent = e.target.value.length;
+    });
+  }
+
+  document.getElementById("addTagBtn")?.addEventListener("click", handleAddTag);
+  document.getElementById("tagInput")?.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") handleAddTag();
+  });
+
+  document
+    .getElementById("saveBookmarkBtn")
+    ?.addEventListener("click", handleSaveBookmark);
+}
+
+async function loadContextualData() {
+  //Fetch the folder once to improve speed
+
+  if (
+    (activeTab === "bookmark" && cachedFolders.length !== 0) ||
+    cachedFolders.length === 0
+  ) {
+    await fetchFolders();
+    await fetchUserTags();
+  }
+
+  if (!userTags || userTags.length === 0) {
+    await fetchUserTags();
+  }
+  if (activeTab === "recent") {
+    await renderRecentBookmarks();
+  } else if (activeTab === "folders") {
+    renderFoldersList();
+  }
+}
+
+async function fetchUserTags() {
+  try {
+    const data = await apiRequest(`/tag`, "GET");
+    console.log("data for tags", data);
+
+    // Assuming the backend returns an array of { tag_id: "...", tag_name: "..." }
+    userTags = data || [];
+
+    const dropdown = document.getElementById("tagsDropdown");
+    if (!dropdown) return;
+
+    // 1. Reset and populate the dropdown
+    // We keep the first disabled option as a placeholder
+    dropdown.innerHTML = `
+      <option value="" disabled selected>Choose a tag...</option>
+      ${userTags
+        .map(
+          (tag) => `
+        <option value="${tag.tag_id}">${tag.tag_name}</option>
+      `,
+        )
+        .join("")}
+    `;
+
+    dropdown.onchange = (e) => {
+      const selectedId = e.target.value;
+
+      // Find the tag object so we have the name for the UI
+      const tagObj = userTags.find((t) => t.tag_id === selectedId);
+
+      if (tagObj && !selectedTags.some((t) => t.tag_id === selectedId)) {
+        selectedTags.push(tagObj); // Store the whole object {id, name}
+        renderPills();
+      }
+
+      // Reset dropdown to the placeholder
+      dropdown.value = "";
+    };
+  } catch (error) {
+    console.error("Error fetching the user tags: ", error);
+  }
+}
+
+/** * ==========================================
+ * PILL RENDERING
+ * ========================================== */
+function renderPills() {
+  const pillsContainer = document.getElementById("selectedPills");
+  if (!pillsContainer) return;
+
+  if (selectedTags.length === 0) {
+    pillsContainer.innerHTML = `<span class="placeholder-text">No tags selected</span>`;
+    return;
+  }
+
+  pillsContainer.innerHTML = selectedTags
+    .map(
+      (tag) => `
+    <div class="tag-pill">
+      ${tag.tag_name}
+      <span class="remove-pill" data-id="${tag.tag_id}">×</span>
+    </div>
+  `,
+    )
+    .join("");
+
+  // Attach removal logic
+  pillsContainer.querySelectorAll(".remove-pill").forEach((btn) => {
+    btn.onclick = () => {
+      const idToRemove = btn.dataset.id;
+      selectedTags = selectedTags.filter((t) => t.tag_id !== idToRemove);
+      renderPills();
+    };
+  });
+}
+
+async function fetchFolderBookmarks() {
+  try {
+    console.log("selected folder view data: ", selectedViewFolder);
+
+    //     selectedViewFolder = {
+    //   id: card.dataset.folderId,
+    //   name: card.dataset.name,
+    // };
+    const data = await apiRequest(`/folder/${selectedViewFolder.id}`, "GET");
+    console.log(`data from folder id ${selectedViewFolder.id}`, data);
+
+    if (data) {
+      selectedViewFolderBookmarks = data;
+    } else {
+      selectedViewFolder = null;
+    }
+  } catch (err) {
+    console.log(
+      "error occured trying to fetch the bookmarks for a folder",
+      err,
+    );
+  }
+}
+
+async function fetchRecentBookmarks() {
+  try {
+    const data = await apiRequest("/content/recent", "POST");
+    console.log("recent bookmark list: ", data);
+    recentBookmarksList = data;
+  } catch (err) {
+    console.log("failed to fetch the folder data: ", err);
+  }
+}
+
+async function fetchFolders() {
+  try {
+    const response = await apiRequest("/folder");
+    cachedFolders = response.data || [];
+
+    // Update dropdown if we are on the bookmark tab
+    const dropdown = document.getElementById("folderDropdown");
+    if (dropdown) {
+      dropdown.innerHTML = `<option value="default">none selected</option>`;
+      cachedFolders.forEach((f) => {
+        const opt = document.createElement("option");
+        opt.value = f.folderId;
+        opt.textContent = f.folderName;
+        dropdown.appendChild(opt);
+      });
+      dropdown.value = activeFolderId;
+      dropdown.addEventListener(
+        "change",
+        (e) => (activeFolderId = e.target.value),
+      );
+    }
+  } catch (err) {
+    console.error("Folder fetch error:", err);
+  }
+}
+
+function renderFoldersList() {
+  const container = document.getElementById("foldersListContainer");
+  if (!container) return;
+
+  // If a folder is selected, show the "Inside Folder" view (Placeholder)
+  if (selectedViewFolder) {
+    renderFolderDetailView(container);
+    return;
+  }
+
+  if (cachedFolders.length === 0) {
+    container.innerHTML = `<div class="empty-state"><p>No folders found.</p></div>`;
+    return;
+  }
+
+  // Modern Grid UI
+  container.innerHTML = `
+    <div class="folders-grid">
+      ${cachedFolders
+        .map(
+          (folder) => `
+        <div class="folder-card" data-id="${folder.folderId}" data-name="${folder.folderName}">
+          <div class="folder-card-icon">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="#4A90E2">
+              <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"></path>
+            </svg>
+          </div>
+          <div class="folder-card-info">
+            <span class="folder-card-name">${folder.folderName}</span>
+            <span class="folder-card-count">${folder.fileCount || 0} bookmarks</span>
+          </div>
+          <div class="folder-card-date">Created ${new Date(folder.createdAt).toLocaleDateString()}</div>
+        </div>
+      `,
+        )
+        .join("")}
+    </div>
+  `;
+
+  // Attach click listeners to cards
+  container.querySelectorAll(".folder-card").forEach((card) => {
+    card.addEventListener("click", () => {
+      selectedViewFolder = {
+        id: card.dataset.id,
+        name: card.dataset.name,
+      };
+      renderFoldersList(); // Re-render to show detail view
+    });
+  });
+}
+
+/** * ==========================================
+ * FOLDER DETAIL VIEW (PLACEHOLDER)
+ * ========================================== */
+async function renderFolderDetailView(container) {
+  await fetchFolderBookmarks();
+
+  if (selectedViewFolderBookmarks === null) {
+    container.innerHTML = `
+    <div class="folder-detail-view">
+          <div class="folder-detail-header">
+        <button id="backToFolders" class="back-btn">← Back</button>
+        <h3>${selectedViewFolder.name}</h3>
+      </div>
+        <h1>No bookmarks found for this folder</h1>
+    </div>
+  `;
+    return;
+  }
+
+  container.innerHTML = `
+
+  <div>
+
+     <div class="folder-detail-header">
+        <button id="backToFolders" class="back-btn">← Back</button>
+        <h3>${selectedViewFolder.name}</h3>
+      </div>
+
+      <div class="selected-folder-bookmark-container">
+      ${selectedViewFolderBookmarks
+        .map(
+          (b) => `
+   
+      <div class="bookmark-card">
+   
+        <div class="bookmark-header">
+          <h4 class="bookmark-title">${b.title || "Untitled"}</h4>
+          <span class="bookmark-date">${new Date(b.created_at || b.first_saved_at).toLocaleDateString()}</span>
+        </div>
+        <a href="${b.url}" target="_blank" class="bookmark-url">visit</a>
+        <div class="bookmark-tags">
+          ${(b.tags || []).map((t) => `<span class="bookmark-tag">${t}</span>`).join("")}
+        </div>
+      </div>
+    `,
+        )
+        .join("")}
+
+      </div>
+
+  </div> 
+  
+  `;
+
+  document.getElementById("backToFolders").addEventListener("click", () => {
+    selectedViewFolder = null;
+    selectedViewFolderBookmarks = null;
+    renderFoldersList();
+  });
+}
+
+async function renderRecentBookmarks() {
+  const container = document.getElementById("recentListContainer");
+  if (!container) return;
+
+  try {
+    if (recentBookmarksList.length === 0) {
+      recentBookmarksList = await apiRequest("/content/recent", "POST");
+      //if it's still equal to 0
+      if (recentBookmarksList.length === 0) {
+        container.innerHTML = `<div class="empty-state"><p>No recent bookmarks</p></div>`;
+        return;
+      }
+    }
+
+    container.innerHTML = recentBookmarksList
+      .map(
+        (b) => `
+      <div class="bookmark-card">
+        <div class="bookmark-header">
+          <h4 class="bookmark-title">${b.title || "Untitled"}</h4>
+          <span class="bookmark-date">${new Date(b.created_at || b.first_saved_at).toLocaleDateString()}</span>
+        </div>
+        <a href="${b.url}" target="_blank" class="bookmark-url">visit</a>
+        <div class="bookmark-tags">
+          ${(b.tags || []).map((t) => `<span class="bookmark-tag">${t}</span>`).join("")}
+        </div>
+        <p id="bookmark-card-folder-card">${b.folder !== "none" || b.folder !== "undefined" ? b.folder : ""} </p>
+      </div>
+    `,
+      )
+      .join("");
+  } catch (err) {
+    container.innerHTML = `<p class="error">Failed to load bookmarks.</p>`;
+  }
+}
+
+async function handleSaveBookmark() {
+  const btn = document.getElementById("saveBookmarkBtn");
+  btn.disabled = true;
+
+  try {
+    const { html, tab } = await extractHTMLFromPage();
+    console.log("got the html extraction");
+    const payload = {
+      url: tab.url,
+      title: tab.title,
+      notes: document.getElementById("notesTextarea").value,
+      html: html,
+      tags: selectedTags,
+      folder_id: activeFolderId !== "default" ? activeFolderId : null,
+    };
+
+    console.log("sending request over", payload);
+    const res = await apiRequest("/content/save", "POST", payload);
+    if (res.status === "Success") {
+      showStatus("Saved!", "success");
+      resetBookmarkForm();
+    }
+  } catch (err) {
+    showStatus("Save failed", "error");
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/** * ==========================================
+ * HELPERS & LOGIN
+ * ========================================== */
+function handleAddTag() {
+  const input = document.getElementById("tagInput");
+  const val = input.value.trim();
+  if (val && !activeTags.includes(val)) {
+    activeTags.push(val);
+    input.value = "";
+    renderTags();
+  }
+}
+
+function renderTags() {
+  const container = document.getElementById("tagsContainer");
+  if (!container) return;
+  container.innerHTML = activeTags
+    .map(
+      (t) => `
+    <span class="tag">${t}<button class="tag-remove" data-tag="${t}">×</button></span>
+  `,
+    )
+    .join("");
+
+  container.querySelectorAll(".tag-remove").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      activeTags = activeTags.filter((t) => t !== btn.dataset.tag);
+      renderTags();
+    });
+  });
+}
+
+function showStatus(msg, type) {
+  const el = document.querySelector(".status-message");
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = type === "error" ? "#ff4d4d" : "#2ecc71";
+  setTimeout(() => (el.textContent = ""), 4000);
+}
+
+function resetBookmarkForm() {
+  activeTags = [];
+  activeFolderId = "default";
+  const textarea = document.getElementById("notesTextarea");
+  if (textarea) textarea.value = "";
+  renderTags();
+}
+
+async function extractHTMLFromPage() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+  const [{ result }] = await chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    func: () => document.documentElement.outerHTML,
+  });
+
+  return { html: result, tab };
+}
+
+function renderLoginView() {
   app.innerHTML = `
     <header class="login_header">
       <a href = "https://csphere.io/"  target="_blank"> 
@@ -169,7 +612,7 @@ function renderLoginInterface() {
     const username = document.getElementById("username").value;
     const password = document.getElementById("password").value;
     try {
-      const LOGIN_URL = `${backend_url}/user/browser/login`;
+      const LOGIN_URL = `${BASE_URL}/user/browser/login`;
       const response = await fetch(LOGIN_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -186,7 +629,7 @@ function renderLoginInterface() {
       }
       if (data?.detail?.trim() === "sucessful login") {
         browser.storage.local.set({ csphere_user_token: data.token }, () => {
-          renderInterface();
+          renderMainView();
         });
       }
     } catch (error) {
@@ -197,7 +640,7 @@ function renderLoginInterface() {
   document.getElementById("googleAuthBtn").addEventListener("click", () => {
     browser.identity.launchWebAuthFlow(
       {
-        url: `${backend_url}/auth/google`,
+        url: `${BASE_URL}/auth/google`,
         interactive: true,
       },
       (redirectUrl) => {
@@ -211,7 +654,7 @@ function renderLoginInterface() {
           console.error("Token missing from redirect");
           return;
         }
-        fetch(`${backend_url}/auth/google/callback`, {
+        fetch(`${BASE_URL}/auth/google/callback`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ code }),
@@ -222,325 +665,17 @@ function renderLoginInterface() {
               console.error("Token missing from backend response");
               return;
             }
-            browser.storage.local.set({ csphere_user_token: data.token }, () => {
-              renderInterface();
-            });
+            browser.storage.local.set(
+              { csphere_user_token: data.token },
+              () => {
+                renderMainView();
+              },
+            );
           })
           .catch((err) => {
             console.error("Error fetching token from backend", err);
           });
-      }
+      },
     );
   });
 }
-
-/** * ========================= * New UI Functions * ========================= */
-function setupTabNavigation() {
-  const tabBtns = document.querySelectorAll(".tab-btn");
-  const tabPanels = document.querySelectorAll(".tab-panel");
-
-  tabBtns.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const targetTab = btn.dataset.tab;
-
-      // Update active states
-      tabBtns.forEach((b) => b.classList.remove("active"));
-      tabPanels.forEach((p) => p.classList.remove("active"));
-
-      btn.classList.add("active");
-      document.getElementById(`${targetTab}-panel`).classList.add("active");
-
-      currentTab = targetTab;
-
-      // Load content for specific tabs
-      if (targetTab === "folders") {
-        loadFoldersView();
-      }
-    });
-  });
-}
-
-function setupTagSystem() {
-  const tagInput = document.getElementById("tagInput");
-  const addTagBtn = document.getElementById("addTagBtn");
-
-  const addTag = () => {
-    const tagValue = tagInput.value.trim();
-    if (tagValue && !tags.includes(tagValue)) {
-      tags.push(tagValue);
-      tagInput.value = "";
-      renderTags();
-    }
-  };
-
-  addTagBtn.addEventListener("click", addTag);
-  tagInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") {
-      addTag();
-    }
-  });
-}
-
-function renderTags() {
-  const container = document.getElementById("tagsContainer");
-  container.innerHTML = tags
-    .map(
-      (tag) => `
-    <span class="tag">
-      ${tag}
-      <button class="tag-remove" onclick="removeTag('${tag}')">×</button>
-    </span>
-  `
-    )
-    .join("");
-}
-
-function removeTag(tagToRemove) {
-  tags = tags.filter((tag) => tag !== tagToRemove);
-  renderTags();
-}
-
-function setupCharacterCounter() {
-  const textarea = document.getElementById("notesTextarea");
-  const charCount = document.getElementById("charCount");
-
-  textarea.addEventListener("input", () => {
-    charCount.textContent = textarea.value.length;
-  });
-}
-
-async function loadRecentBookmarks() {
-  try {
-    const token = await fetchToken();
-    console.log("token from loading recent: ", token);
-    const response = await fetch(`${backend_url}/content/recent`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      console.log("data for recent bookmarks: ", data);
-      recentBookmarks = data || [];
-      renderRecentBookmarks();
-    }
-  } catch (error) {
-    console.log("Error loading recent bookmarks:", error);
-  }
-}
-
-function renderRecentBookmarks() {
-  const container = document.getElementById("recentBookmarks");
-
-  if (recentBookmarks.length === 0) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">📚</div>
-        <p>No recent bookmarks</p>
-        <span>Your recently saved bookmarks will appear here</span>
-      </div>
-    `;
-    return;
-  }
-
-  container.innerHTML = recentBookmarks
-    .map(
-      (bookmark) => `
-    <div class="bookmark-card">
-      <div class="bookmark-header">
-        <h4 class="bookmark-title">${bookmark.title || "Untitled"}</h4>
-        <span class="bookmark-date">${formatDate(
-        bookmark.first_saved_at || bookmark.created_at
-      )}</span>
-      </div>
-      <a href="${bookmark.url}" target="_blank" class="bookmark-url">visit</a>
-      <div class="bookmark-footer">
-        ${bookmark.ai_summary
-          ? `<div class="bookmark-summary">${bookmark.ai_summary}</div>`
-          : ""
-        }
-        <div class="bookmark-meta">
-          <div class="bookmark-tags">
-            ${(bookmark.tags || [])
-          .map((tag) => `<span class="bookmark-tag">${tag}</span>`)
-          .join("")}
-          </div>
-          ${bookmark.folder
-          ? `<span class="bookmark-folder">${bookmark.folder}</span>`
-          : ""
-        }
-        </div>
-      </div>
-    </div>
-  `
-    )
-    .join("");
-}
-
-function loadFoldersView() {
-  // This will use the existing folder data loaded by getRecentFolders()
-  const container = document.getElementById("foldersView");
-  // Implementation depends on your folder structure
-  container.innerHTML = `
-    <div class="folders-list">
-      <p>Folder management coming soon...</p>
-    </div>
-  `;
-}
-
-function formatDate(dateString) {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffTime = Math.abs(now - date);
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 1) return "Today";
-  if (diffDays === 2) return "Yesterday";
-  if (diffDays <= 7) return `${diffDays} days ago`;
-  return date.toLocaleDateString();
-}
-
-/** * ========================= * Existing Utility Functions * ========================= */
-function getNotes() {
-  const textarea = document.getElementById("notesTextarea");
-  return textarea.value;
-}
-
-function insertMessage(message, type) {
-  const message_p = document.querySelector(".message-p");
-  if (!message_p) return;
-  message_p.textContent = message;
-  message_p.style.color = type === "error" ? "red" : "green";
-  setTimeout(() => {
-    message_p.textContent = "";
-    message_p.style.color = "";
-  }, 5000);
-}
-
-function fetchToken() {
-  return new Promise((resolve) => {
-    browser.storage.local.get(["csphere_user_token"], (result) => {
-      resolve(result.csphere_user_token);
-    });
-  });
-}
-
-async function getRecentFolders() {
-  try {
-    const API_URL = `${backend_url}/folder`;
-    const token = await fetchToken();
-    console.log("token fecthed: ", token);
-    const response = await fetch(API_URL, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    const data = await response.json();
-    console.log("folder data: ", data);
-    const folders = data.data;
-    const folderContainer = document.querySelector(".user-folders");
-    folderContainer.innerHTML = `<select class="folder-select"></select>`;
-    const folderGrid = folderContainer.querySelector(".folder-select");
-
-    // Default option
-    const folderOption = document.createElement("option");
-    folderOption.textContent = "none selected";
-    folderOption.value = "default";
-    folderGrid.appendChild(folderOption);
-
-    folders.forEach((folder) => {
-      const option = document.createElement("option");
-      option.textContent = folder.folderName;
-      option.value = folder.folderId;
-      folderGrid.appendChild(option);
-    });
-
-    folderGrid.addEventListener("change", (event) => {
-      selectedFolder = event.target.value;
-    });
-  } catch (error) {
-    console.log(error);
-  }
-}
-
-function logout() {
-  browser.storage.local.remove("csphere_user_token", () => {
-    console.log("csphere_user_token removed from local storage");
-  });
-}
-
-/** * ========================= * Enhanced Bookmark Handler * ========================= */
-function setupBookmarkHandler() {
-  const btn = document.getElementById("bookMarkBtn");
-  const logoutBtn = document.getElementsByClassName("logout-btn")[0];
-
-  if (!btn) return;
-
-  btn.addEventListener("click", async () => {
-    btn.disabled = true;
-    try {
-      const { html, tab } = await extractHTMLFromPage();
-      console.log("Extracted HTML:", html);
-      const notes = getNotes();
-      const token = await fetchToken();
-
-      const tabData = {
-        url: tab.url,
-        title: tab.title,
-        notes: notes,
-        html: html,
-        tags: tags, // Include tags in the bookmark data
-      };
-
-      if (selectedFolder !== "default") {
-        tabData.folder_id = selectedFolder;
-      }
-
-      const endpoint = `${backend_url}/content/save`;
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(tabData),
-      });
-
-      const data = await response.json();
-      if (data.status !== "Success") {
-        throw new Error(`Server returned error: ${data.status}`);
-      }
-
-      insertMessage("Bookmark successfully saved", "success");
-
-      // Clear form after successful save
-      document.getElementById("notesTextarea").value = "";
-      document.getElementById("charCount").textContent = "0";
-      tags = [];
-      renderTags();
-      selectedFolder = "default";
-      document.querySelector(".folder-select").value = "default";
-
-      // Refresh recent bookmarks
-      loadRecentBookmarks();
-    } catch (err) {
-      console.error(err);
-      insertMessage("Failed to save bookmark", "error");
-    } finally {
-      btn.disabled = false;
-    }
-  });
-
-  logoutBtn.addEventListener("click", () => {
-    logout();
-    renderLoginInterface();
-  });
-}
-
-// Make removeTag available globally
-window.removeTag = removeTag;

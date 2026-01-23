@@ -13,13 +13,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {VisitButton} from "../../../components/VisitButton";
+import { VisitButton } from "../../../components/VisitButton";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
+import { Bookmark } from "@/types/bookmark";
 
 interface Tag {
   category_id: string;
@@ -38,7 +40,7 @@ interface BookmarkData {
 }
 
 interface BookmarkDetailModalProps {
-  bookmark: BookmarkData | null;
+  bookmark: Bookmark | null;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -164,6 +166,26 @@ export function BookmarkDetailModal({
               </div>
             </div> */}
 
+            {/* categories */}
+            {bookmark.categories?.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Tag className="w-4 h-4" />
+                  <span className="font-medium">Categories</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {bookmark.categories.map((cat, index) => (
+                    <Badge
+                      key={index}
+                      variant="secondary"
+                      className="bg-gray-200"
+                    >
+                      {cat.category_name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
             {/* Tags */}
             {bookmark.tags?.length > 0 && (
               <div>
@@ -178,7 +200,7 @@ export function BookmarkDetailModal({
                       variant="secondary"
                       className="bg-gray-200"
                     >
-                      {tag.category_name}
+                      {tag.tag_name}
                     </Badge>
                   ))}
                 </div>

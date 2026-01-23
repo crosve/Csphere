@@ -39,10 +39,13 @@ def create_tag_service(user_id: UUID, tag_data: TagCreationData, db: Session):
 def get_user_tags_service(user_id: UUID, db: Session):
     # Direct fetch from Tag table using user_id
     tags = db.query(Tag).filter(Tag.user_id == user_id).all()
+    print("all user tags: ", tags)
 
     if not tags:
         # Keeping your existing logic, though an empty list is often preferred over an exception
         return []
+    
+    logging.info("All the tags: ", tags)
     
     return [
         {

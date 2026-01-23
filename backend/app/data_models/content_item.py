@@ -3,6 +3,8 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.db.database import Base
+from app.data_models.content_tag import ContentTag
+
 
 class ContentItem(Base):
     __tablename__ = "content_item"
@@ -13,6 +15,12 @@ class ContentItem(Base):
     notes = Column(String, nullable=True)
     content = relationship("Content", backref="content_items")
     read = Column(Boolean, nullable=False, server_default=text('false'))
+
+    tags = relationship(
+        'Tag',
+        secondary=ContentTag, 
+        back_populates="contents"
+    )
 
 
 

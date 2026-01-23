@@ -2,6 +2,7 @@ from data_models.content import Content
 from data_models.content_item import ContentItem
 from data_models.folder_item import folder_item
 from data_models.content_ai import ContentAI
+from data_models.content_tag import ContentTag
 
 import logging
 import requests
@@ -19,7 +20,7 @@ def fetch_content(url):
         return None
 
 
-def handle_existing_content(existing_content, user_id: str, db, notes: str, folder_id: str) -> bool:
+def handle_existing_content(existing_content, user_id: str, db, notes: str, folder_id: str, tag_ids: list[str]) -> bool:
     try:
         utc_now = datetime.now(timezone.utc)
         content_id = existing_content.content_id
@@ -65,6 +66,24 @@ def handle_existing_content(existing_content, user_id: str, db, notes: str, fold
                 logging.info(f"Assigned content {content_id} to folder {folder_id}")
             else:
                 logging.info(f"Content {content_id} is already in folder {folder_id}, skipping link creation.")
+
+
+        if tag_ids:
+            for tag_id in tag_ids:
+                # Check if tag is already linked to prevent duplicates
+                existing_tag_link = db.query(ContentTag).filter(
+                    ContentTag.tag_id == tag_id,
+                    ContentTag.content_id == content_id,
+                    ContentTag.user_id == user_id
+                ).first()
+
+                if not existing_tag_link:
+                    new_tag_link = ContentTag(
+                        tag_id=tag_id,
+                        content_id=content_id,
+                        user_id=user_id
+                    )
+                    db.add(new_tag_link)
 
 
         db.commit()

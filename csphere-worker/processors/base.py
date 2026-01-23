@@ -65,6 +65,7 @@ class BaseProcessor(ABC):
         folder_id = message.get('folder_id', '')
         raw_html = message.get('raw_html', '')
         content_data = message.get('content_payload', {})
+        tag_ids = message.get('tag_ids', [])
 
         
 
@@ -78,13 +79,13 @@ class BaseProcessor(ABC):
 
         #     raw_html = self.get_html_content(url=content_data.get('url'))
         
-        return (user_id, notes, folder_id, raw_html, content_data)
+        return (user_id, notes, folder_id, raw_html, content_data, tag_ids)
     
-    def handle_if_exists(self, content_url: str, user_id: int, notes:str, folder_id: int) -> str :
+    def handle_if_exists(self, content_url: str, user_id: int, notes:str, folder_id: int, tag_ids: list[str]) -> str :
         existing_content : Content = self.db.query(Content).filter(Content.url == content_url).first()
 
         if existing_content:
-            handle_existing_content(existing_content, user_id, self.db, notes, folder_id)
+            handle_existing_content(existing_content, user_id, self.db, notes, folder_id, tag_ids)
             logger.info("Bookmark succesfully saved to user")
             return existing_content.content_id
         

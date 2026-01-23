@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from data_models.content_item import ContentItem
 from classes.EmbeddingManager import ContentEmbeddingManager
 from data_models.folder_item import folder_item
+from data_models.content_tag import ContentTag
 
 from uuid import uuid4
 
@@ -21,16 +22,17 @@ class ContentProcessor(BaseProcessor):
         super().__init__(db=db)
 
 
+    #Message now has the tag_ids we need to connect 
     def process(self, message: dict) -> str:
 
-        user_id, notes, folder_id, _, content_data = self.extract_data(message=message)
+        user_id, notes, folder_id, _, content_data, tag_ids = self.extract_data(message=message)
 
         content_url = content_data.get('url')
 
-        existing_content_id = self.handle_if_exists(content_url, user_id, notes, folder_id)
+        existing_content_id = self.handle_if_exists(content_url, user_id, notes, folder_id, tag_ids)
 
         if existing_content_id != '':
-            logger.info('Content existed and was saved appropiatly')
+            logger.info('Content existed and was saved appropriately')
             return existing_content_id
         
         new_content : Content = Content(**content_data)
@@ -72,6 +74,7 @@ class ContentProcessor(BaseProcessor):
                         content_id=new_content.content_id,
                         saved_at=utc_time,
                         notes=notes
+
                     )
                     self.db.add(new_item)
                     self.db.commit()
@@ -93,12 +96,35 @@ class ContentProcessor(BaseProcessor):
                     else:
                         print("No valid folder id found, skipping this part")
 
+                    if tag_ids:
+                        for tag_id in tag_ids:
+                            # Use .c. before the column names
+                            existing_tag_link = self.db.query(ContentTag).filter(
+                                ContentTag.c.tag_id == tag_id,
+                                ContentTag.c.content_id == new_item.content_id,
+                                ContentTag.c.user_id == user_id
+                            ).first()
+
+                            if not existing_tag_link:
+                                # For Table objects, you must use a core insert statement 
+                                # OR make sure ContentTag is a Class.
+                                # If it's a Table, use this:
+                                stmt = ContentTag.insert().values(
+                                    tag_id=tag_id,
+                                    content_id=new_item.content_id,
+                                    user_id=user_id
+                                )
+                                self.db.execute(stmt)
+                        self.db.commit()
+                                
+
                 logging.info(f"Successfully saved content for user. Returning content id: {new_content.content_id}")
 
 
                 return new_content.content_id
 
         except Exception as e:
+            self.db.rollback()
             logging.error(f"Error occurred while saving the bookmark: {str(e)}")
             return ''
             

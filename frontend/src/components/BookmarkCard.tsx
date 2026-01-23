@@ -13,7 +13,7 @@ import NotePopup from "@/app/components/home/NotePopup";
 
 import BookMarkSettingIcon from "./BookMarkSettingIcon";
 import { BookmarkDetailModal } from "@/app/components/bookmark/BookmarkModal";
-import {VisitButton} from "./VisitButton";
+import { VisitButton } from "./VisitButton";
 
 interface NoteButtonProps {
   handleNotePopoverClick: (e: React.MouseEvent) => void;
@@ -33,10 +33,12 @@ export default function BookmarkCard({ bookmark }: BookmarkCardProps) {
   const [saved, setSaved] = useState<boolean>(true);
   const [showNotes, setShowNotes] = useState<boolean>(false);
   const [noteContent, setNoteContent] = useState<string>(() =>
-    bookmark.notes?.length > 0 ? bookmark.notes : ""
+    bookmark.notes?.length > 0 ? bookmark.notes : "",
   );
   const [editNotes, setEditNotes] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+
+  console.log("bookmark data: ", bookmark);
 
   const token = document.cookie
     .split("; ")
@@ -201,16 +203,16 @@ export default function BookmarkCard({ bookmark }: BookmarkCardProps) {
           {bookmark.ai_summary || "No summary available."}
         </p>
 
-        {/* Tags */}
-        {bookmark?.tags?.length > 0 && (
+        {/* categories */}
+        {bookmark?.categories?.length > 0 && (
           <div className="mb-3 flex flex-wrap gap-2">
-            {bookmark.tags.map((tag) => (
+            {bookmark.categories.map((cat) => (
               <Badge
-                key={tag.category_id}
+                key={cat.category_id}
                 variant="secondary"
                 className="text-xs bg-gray-500"
               >
-                {tag.category_name}
+                {cat.category_name}
               </Badge>
             ))}
           </div>
@@ -221,10 +223,10 @@ export default function BookmarkCard({ bookmark }: BookmarkCardProps) {
 
           {/* Footer */}
           <div className="flex justify-between items-center mt-auto pt-1 ">
-            <VisitButton 
-            url={bookmark.url} 
-            contentId={bookmark.content_id}
-            onVisit={setReadLink}
+            <VisitButton
+              url={bookmark.url}
+              contentId={bookmark.content_id}
+              onVisit={setReadLink}
             />
             <Button
               variant="ghost"
