@@ -7,9 +7,16 @@ class NoteContentUpdate(BaseModel):
     notes: str
     bookmarkID: UUID
 
+
+class ContentCreatTags(BaseModel):
+     tag_name: str
+     tag_id: str
+
+
 class ContentCreate(BaseModel):
     url: str
     title: Optional[str]
+    tags: Optional[list[ContentCreatTags]]
     notes: Optional[str]
     folder_id: Optional[UUID] = None
     html: str

@@ -61,6 +61,8 @@ def search(query: str, user: User = Depends(get_current_user), db: Session = Dep
 @router.post("/save")
 def save_content(content: ContentCreate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     try:
+        print("content item being sent: ", content)
+        return
         _enqueue_new_content(
                 url=content.url,
                 title=content.title,

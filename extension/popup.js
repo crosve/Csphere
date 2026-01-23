@@ -500,16 +500,17 @@ async function handleSaveBookmark() {
   btn.disabled = true;
 
   try {
-    const { html, tab } = await extractHTML();
+    const { html, tab } = await extractHTMLFromPage();
     const payload = {
       url: tab.url,
       title: tab.title,
       notes: document.getElementById("notesTextarea").value,
       html: html,
-      tags: activeTags,
+      tags: selectedTags,
       folder_id: activeFolderId !== "default" ? activeFolderId : null,
     };
 
+    console.log("sending request over", payload);
     const res = await apiRequest("/content/save", "POST", payload);
     if (res.status === "Success") {
       showStatus("Saved!", "success");
@@ -570,21 +571,15 @@ function resetBookmarkForm() {
   renderTags();
 }
 
-async function extractHTML() {
-  return new Promise(async (resolve) => {
-    const [tab] = await browser.tabs.query({
-      active: true,
-      currentWindow: true,
-    });
-    const listener = (req) => {
-      if (req.action === "htmlExtracted") {
-        browser.runtime.onMessage.removeListener(listener);
-        resolve({ html: req.html, tab });
-      }
-    };
-    browser.runtime.onMessage.addListener(listener);
-    utils.executeContentScript(tab.id, "content.js");
+async function extractHTMLFromPage() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+  const [{ result }] = await chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    func: () => document.documentElement.outerHTML,
   });
+
+  return { html: result, tab };
 }
 
 function renderLoginView() {
