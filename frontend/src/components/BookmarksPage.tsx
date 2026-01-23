@@ -175,8 +175,10 @@ const BookmarksPage: React.FC<ChildProps> = ({ activeTab }) => {
         return;
       }
 
-      const filtered = originalBookmarks.filter((bookmark) => {
-        const bookmarkNames = bookmark.tags.map((tag) => tag.category_name);
+      const filtered = originalBookmarks.filter((bookmark: Bookmark) => {
+        const bookmarkNames = bookmark.categories.map(
+          (cat) => cat.category_name,
+        );
         const categorySet = new Set(bookmarkNames);
 
         // If `.intersection()` exists:
