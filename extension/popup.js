@@ -1,5 +1,4 @@
 import { BACKEND_URL, DEPLOYED } from "./config.dev.js";
-import { utils } from "./utils.js";
 
 /** * ==========================================
  * STATE MANAGEMENT

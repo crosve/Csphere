@@ -1,27 +1,22 @@
-// utils.js
+// polyfilling browser to ensure it exists in Chrome MV3
 
-// 1. Safe Polyfill: Use 'self' instead of 'window'
-// In a Service Worker, 'self' refers to the ServiceWorkerGlobalScope.
-if (typeof browser === "undefined") {
-  self.browser = chrome;
+if (typeof browser == "undefined") {
+  window.browser = chrome;
 }
-
 /*
 Cross-browser/version replacement for executeScript 
 */
 function executeContentScript(tabId, file) {
-  // Chrome MV3 path (Scripting API)
-  if (chrome.scripting && chrome.scripting.executeScript) {
-    return chrome.scripting.executeScript({
-      target: { tabId: tabId },
-      files: [file],
-    });
+  // Firefox MV2
+  if (root.browser?.tabs?.executeScript) {
+    return root.browser.tabs.executeScript(tabId, { file });
   }
 
-  // Fallback/Firefox MV2 path
-  if (browser.tabs && browser.tabs.executeScript) {
-    return browser.tabs.executeScript(tabId, {
-      file: file,
+  // Chrome MV3
+  if (root.chrome?.scripting?.executeScript) {
+    return root.chrome.scripting.executeScript({
+      target: { tabId },
+      files: [file],
     });
   }
 
@@ -32,18 +27,27 @@ function executeContentScript(tabId, file) {
 Getting active tab across browsers
 */
 async function getActiveTab() {
-  // Chrome MV3 uses promises for the 'tabs' API
-  if (chrome.tabs && chrome.tabs.query) {
-    const [tab] = await chrome.tabs.query({
+  if (browser.tabs && browser.tabs.query) {
+    const [tab] = await browser.tabs.query({
       active: true,
       currentWindow: true,
     });
     return tab;
   }
 
+  if (chrome.tabs && chrome.tabs.query) {
+    return new Promise((resolve) => {
+      chrome.tabs.query({ active: true }, (tabs) => resolve(tabs[0]));
+    });
+  }
+
+  console.error("No comptabile getActiveTab API found");
   return null;
 }
 
-// 2. Exposing functions globally
-// We attach to 'self' so both Service Workers and Window contexts can see it.
-export const utils = { executeContentScript, getActiveTab };
+// exposing the functions globally for all scripts
+
+window.utils = {
+  executeContentScript,
+  getActiveTab,
+};
