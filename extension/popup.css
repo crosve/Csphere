@@ -36,7 +36,7 @@ body {
 
 /* Extension Popup Container */
 .extension-popup {
-  width: 360px;
+  width: 500px;
   height: 500px;
   background: white;
   display: flex;
@@ -599,3 +599,154 @@ body {
 .folder-detail-header{
   margin-bottom: 10px;
 }
+
+
+.tag-section {
+  margin-top: 15px;
+}
+
+.section-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #586069;
+  display: block;
+  margin-bottom: 6px;
+}
+
+/* The box that holds everything */
+.tag-input-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid #d1d5da;
+  border-radius: 6px;
+  background: white;
+  min-height: 38px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.tag-input-wrapper:focus-within {
+  border-color: #4A90E2;
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+#tagTextInput {
+  border: none;
+  outline: none;
+  flex-grow: 1;
+  font-size: 13px;
+  min-width: 80px;
+}
+
+/* The actual "Pills" */
+.tag-chip {
+  background: #e1f0ff;
+  color: #0366d6;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tag-remove-btn {
+  background: none;
+  border: none;
+  color: #0366d6;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+}
+
+.tag-suggestions {
+  margin-top: 8px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.suggestion-chip {
+  font-size: 11px;
+  background: #f6f8fa;
+  border: 1px solid #e1e4e8;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #586069;
+}
+
+.suggestion-chip:hover {
+  background: #eef1f4;
+}
+
+
+.multi-select-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Selected Pills Area */
+.pills-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px;
+  background: #f8f9fa;
+  border: 1px dashed #d1d5da;
+  border-radius: 8px;
+  min-height: 44px;
+}
+
+.placeholder-text {
+  color: #959da5;
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* Individual Pill Style */
+.tag-pill {
+  display: flex;
+  align-items: center;
+  background: #1f3534;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  animation: popIn 0.2s ease-out;
+}
+
+.tag-pill .remove-pill {
+  margin-left: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  opacity: 0.7;
+}
+
+.tag-pill .remove-pill:hover {
+  opacity: 1;
+}
+
+/* Dropdown Style */
+.modern-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5da;
+  border-radius: 6px;
+  background-color: white;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.select-hint {
+  font-size: 10px;
+  color: #6a737d;
+  margin-top: 4px;
+}
+

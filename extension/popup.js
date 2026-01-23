@@ -16,6 +16,10 @@ let recentBookmarksList = [];
 let selectedViewFolder = null;
 let selectedViewFolderBookmarks = null; //Used to store the selected folder's bookmarks
 
+//Tag selection states
+let userTags = [];
+let selectedTags = [];
+
 /** * ==========================================
  * INITIALIZATION
  * ========================================== */
@@ -95,16 +99,30 @@ function renderMainView() {
             </div>
 
             <div class="section">
-              <label class="section-label">Tags</label>
-              <div id="tagsContainer" class="tags-container"></div>
-              <div class="tag-input-container">
-                <input type="text" id="tagInput" class="tag-input" placeholder="Add tag..." />
-                <button id="addTagBtn" class="add-tag-btn">+</button>
+              <div class="tag-section">
+
+                <div class="multi-select-container">
+                  <label class="section-label">Selected Tags</label>
+                  
+                  <div id="selectedPills" class="pills-display">
+                    <span class="placeholder-text">No tags selected</span>
+                  </div>
+
+                  <div class="dropdown-wrapper">
+                    <select id="tagsDropdown" class="modern-select">
+                      <option value="" disabled selected>Choose a tag...</option>
+                   
+                    </select>
+                    <div class="select-hint">Tags are added as you click them</div>
+                  </div>
+                </div>
+                                
+           
               </div>
             </div>
 
             <div class="section">
-              <label class="section-label">Target Folder</label>
+              <label class="section-label">Folder</label>
               <select id="folderDropdown" class="folder-select">
                 <option value="default">none selected</option>
               </select>
@@ -180,13 +198,93 @@ async function loadContextualData() {
     cachedFolders.length === 0
   ) {
     await fetchFolders();
+    await fetchUserTags();
   }
 
+  if (!userTags || userTags.length === 0) {
+    await fetchUserTags();
+  }
   if (activeTab === "recent") {
     await renderRecentBookmarks();
   } else if (activeTab === "folders") {
     renderFoldersList();
   }
+}
+
+async function fetchUserTags() {
+  try {
+    const data = await apiRequest(`/tag`, "GET");
+    console.log("data for tags", data);
+
+    // Assuming the backend returns an array of { tag_id: "...", tag_name: "..." }
+    userTags = data || [];
+
+    const dropdown = document.getElementById("tagsDropdown");
+    if (!dropdown) return;
+
+    // 1. Reset and populate the dropdown
+    // We keep the first disabled option as a placeholder
+    dropdown.innerHTML = `
+      <option value="" disabled selected>Choose a tag...</option>
+      ${userTags
+        .map(
+          (tag) => `
+        <option value="${tag.tag_id}">${tag.tag_name}</option>
+      `,
+        )
+        .join("")}
+    `;
+
+    dropdown.onchange = (e) => {
+      const selectedId = e.target.value;
+
+      // Find the tag object so we have the name for the UI
+      const tagObj = userTags.find((t) => t.tag_id === selectedId);
+
+      if (tagObj && !selectedTags.some((t) => t.tag_id === selectedId)) {
+        selectedTags.push(tagObj); // Store the whole object {id, name}
+        renderPills();
+      }
+
+      // Reset dropdown to the placeholder
+      dropdown.value = "";
+    };
+  } catch (error) {
+    console.error("Error fetching the user tags: ", error);
+  }
+}
+
+/** * ==========================================
+ * PILL RENDERING
+ * ========================================== */
+function renderPills() {
+  const pillsContainer = document.getElementById("selectedPills");
+  if (!pillsContainer) return;
+
+  if (selectedTags.length === 0) {
+    pillsContainer.innerHTML = `<span class="placeholder-text">No tags selected</span>`;
+    return;
+  }
+
+  pillsContainer.innerHTML = selectedTags
+    .map(
+      (tag) => `
+    <div class="tag-pill">
+      ${tag.tag_name}
+      <span class="remove-pill" data-id="${tag.tag_id}">×</span>
+    </div>
+  `,
+    )
+    .join("");
+
+  // Attach removal logic
+  pillsContainer.querySelectorAll(".remove-pill").forEach((btn) => {
+    btn.onclick = () => {
+      const idToRemove = btn.dataset.id;
+      selectedTags = selectedTags.filter((t) => t.tag_id !== idToRemove);
+      renderPills();
+    };
+  });
 }
 
 async function fetchFolderBookmarks() {
