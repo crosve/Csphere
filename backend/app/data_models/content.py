@@ -25,3 +25,4 @@ class Content(Base):
         secondary=ContentCategory,
         back_populates="contents"      
     )
+

@@ -3,6 +3,7 @@ from typing import Optional
 from uuid import UUID
 from datetime import datetime
 
+from app.schemas.tag import TagOut
 class NoteContentUpdate(BaseModel):
     notes: str
     bookmarkID: UUID
@@ -59,7 +60,8 @@ class UserSavedContent(BaseModel):
     ai_summary: Optional[str]
     first_saved_at: datetime
     notes: Optional[str]
-    tags: Optional[list[CategoryOut]]
+    tags: Optional[list[TagOut]]
+    categories: Optional[list[CategoryOut]]
 
 class CategoryItem(BaseModel):
     category_id: str

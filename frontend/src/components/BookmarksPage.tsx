@@ -7,6 +7,7 @@ import BookmarkLayout from "@/app/(content)/home/BookmarkLayout";
 import CategoryFilter from "./CategoryFilter";
 import Loading from "./ux/Loading";
 import { list } from "postcss";
+import { Bookmark } from "@/types/bookmark";
 
 type ChildProps = {
   activeTab?: string;
@@ -16,20 +17,6 @@ interface Tags {
   category_id: string;
   category_name: string;
 }
-
-interface Tag {
-  category_id: string;
-  category_name: string;
-}
-
-type Bookmark = {
-  content_id: string;
-  title?: string;
-  source?: string;
-  ai_summary?: string;
-  url: string;
-  tags?: Tag[];
-};
 
 const BookmarksPage: React.FC<ChildProps> = ({ activeTab }) => {
   //Make a type for the bookmarks later
@@ -89,7 +76,7 @@ const BookmarksPage: React.FC<ChildProps> = ({ activeTab }) => {
       setBookmarks((prev) => [...prev, ...data.bookmarks]);
       setCategories((prev) => {
         const incoming = (data.categories || []).filter(
-          (c: Tags) => c?.category_name?.trim() !== ""
+          (c: Tags) => c?.category_name?.trim() !== "",
         );
         const byId = new Map(prev.map((c) => [c.category_id, c]));
         for (const c of incoming) byId.set(c.category_id, c);

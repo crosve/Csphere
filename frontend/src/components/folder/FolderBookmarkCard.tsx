@@ -41,7 +41,7 @@ export default function FolderBookmarkCard({
   const [saved, setSaved] = useState<boolean>(true);
   const [showNotes, setShowNotes] = useState<boolean>(false);
   const [noteContent, setNoteContent] = useState<string>(() =>
-    bookmark.notes?.length > 0 ? bookmark.notes : ""
+    bookmark.notes?.length > 0 ? bookmark.notes : "",
   );
   const [editNotes, setEditNotes] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -170,7 +170,7 @@ export default function FolderBookmarkCard({
         }
         className={cn(
           "border relative border-black rounded-lg p-6 wrap-break-word hover:shadow-md transition-shadow flex flex-col justify-between h-full cursor-pointer",
-          selected && "ring-2 ring-gray-900 "
+          selected && "ring-2 ring-gray-900 ",
         )}
       >
         {/* Top metadata row */}
@@ -223,16 +223,16 @@ export default function FolderBookmarkCard({
           {bookmark.ai_summary || "No summary available."}
         </p>
 
-        {/* Tags */}
-        {bookmark?.tags?.length > 0 && (
+        {/* categories */}
+        {bookmark?.categories?.length > 0 && (
           <div className="mb-3 flex flex-wrap gap-2">
-            {bookmark.tags.map((tag) => (
+            {bookmark.categories.map((category) => (
               <Badge
-                key={tag.category_id}
+                key={category.category_id}
                 variant="secondary"
                 className="text-xs bg-gray-500"
               >
-                {tag.category_name}
+                {category.category_name}
               </Badge>
             ))}
           </div>

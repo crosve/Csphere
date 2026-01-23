@@ -13,7 +13,8 @@ import logging
 from sqlalchemy.orm import joinedload
 from dateutil.parser import isoparse
 from app.core.settings import get_settings
-
+from app.schemas.content import ContentCreatTags
+from app.schemas.tag import TagOut
 
 from sqlalchemy.orm import Session
 from uuid import UUID
@@ -106,9 +107,17 @@ def _enqueue_new_content(
     html: str | None,
     user_id: UUID,
     notes: str | None,
+    tags: list[ContentCreatTags ]| None,
     folder_id: str | UUID | None,
 ) -> None:
     utc_time = datetime.now(timezone.utc)
+
+    #pase out only the content id's
+    tag_ids = []
+    if tags:
+        for tag in tags:
+            tag_ids.append(tag.tag_id)
+            
     payload = {
         "content_payload": {
             "url": url,
@@ -120,6 +129,7 @@ def _enqueue_new_content(
         "user_id": str(user_id),
         "notes": notes,
         "folder_id": str(folder_id) if folder_id else None,
+        "tag_ids" : tag_ids
     }
     message = json.dumps(payload)
     result = push_to_activemq(message=message)
@@ -136,16 +146,14 @@ def get_total_unread_count(user_id: str, db: Session):
     return {'status' : "succesful", 'total_count' : total_count}
 
 
-def get_content_service(cursor: str, categories: list[str], user_id : UUID, db: Session):
-
+def get_content_service(
+    cursor: str, 
+    filter_category_names: list[str], 
+    user_id: UUID, 
+    db: Session
+):
     PAGE_SIZE = 9
-
-    if categories:
-        categories = set(categories)
-
-    # Parse cursor into datetime if provided
-
-    #note: adding in another param - filters of categories we need to fetch 
+    
     cursor_dt = None
     if cursor:
         try:
@@ -153,126 +161,54 @@ def get_content_service(cursor: str, categories: list[str], user_id : UUID, db: 
         except (ValueError, TypeError):
             raise ValueError("Datetime for cursor is wrongly formatted")
 
-    # Base query
+
     query = (
         db.query(ContentItem, Content, ContentAI.ai_summary)
         .join(Content, ContentItem.content_id == Content.content_id)
         .outerjoin(ContentAI, Content.content_id == ContentAI.content_id)
-        .options(joinedload(Content.categories))
+        .options(
+            joinedload(Content.categories),
+            joinedload(ContentItem.tags) 
+        )
         .filter(ContentItem.user_id == user_id)
     )
 
     if cursor_dt:
         query = query.filter(ContentItem.saved_at < cursor_dt)
 
-    
-
-    query = query.order_by(desc(ContentItem.saved_at)).limit(PAGE_SIZE + 1)
-
-    results = query.all()
-
-    # Check if we have more results
-    has_next = len(results) > PAGE_SIZE
-    results = results[:PAGE_SIZE]
-
-    category_list = []
-    bookmark_data = []
-
-    for item, content, ai_summary in results:
-        tags = [CategoryOut.from_orm(cat) for cat in content.categories]
-
-        #calculate the intersection between the two 
-        
-        if categories:
-            common_tags = set(tags).intersection(categories)
-
-
-            if len(common_tags) >= 1:
-                bookmark_data.append(
-                    UserSavedContent(
-                        content_id=content.content_id,
-                        url=content.url,
-                        title=content.title,
-                        source=content.source,
-                        ai_summary=ai_summary,
-                        first_saved_at=item.saved_at,
-                        notes=item.notes,
-                        tags=tags
-                    )
-                )
-                category_list.extend(tags)
-
-        #no categories being filteres - Just add them in 
-        else:
-            bookmark_data.append(
-                UserSavedContent(
-                    content_id=content.content_id,
-                    url=content.url,
-                    title=content.title,
-                    source=content.source,
-                    ai_summary=ai_summary,
-                    first_saved_at=item.saved_at,
-                    notes=item.notes,
-                    tags=tags
-                )
-            )
-            category_list.extend(tags)
-
-        
-
-    unique_categories = {cat.category_id: cat for cat in category_list}.values()
-
-    # The new cursor = last item’s saved_at
-    next_cursor = bookmark_data[-1].first_saved_at.isoformat() if bookmark_data else None
-
-    return {
-        "bookmarks": bookmark_data,
-        "categories": list(unique_categories)[:10],
-        "next_cursor": next_cursor,
-        "has_next": has_next
-    }
-
-def get_unread_content_service(cursor: str, user_id: UUID, db: Session):
-    PAGE_SIZE = 9
-    cursor_dt = None
-    
-    if cursor:
-        try:
-            cursor_dt = isoparse(cursor)
-        except (ValueError, TypeError):
-            raise ValueError("Invalid cursor format")
-
-    # 1. Build the base query
-    query = (
-        db.query(ContentItem, Content, ContentAI.ai_summary)
-        .join(Content, ContentItem.content_id == Content.content_id)
-        .outerjoin(ContentAI, Content.content_id == ContentAI.content_id)
-        .options(joinedload(Content.categories))
-        .filter(ContentItem.user_id == user_id, ContentItem.read == False)
-    )
-
-    # 2. IMPORTANT: Re-assign the filtered query
-    if cursor_dt:
-        query = query.filter(ContentItem.saved_at < cursor_dt)
-
-    # 3. Order and Limit (fetch PAGE_SIZE + 1 to check for has_next)
     results = query.order_by(desc(ContentItem.saved_at)).limit(PAGE_SIZE + 1).all()
-
+    
     has_next = len(results) > PAGE_SIZE
     paged_results = results[:PAGE_SIZE]
 
-    bookmark_data = []
-    category_map = {}
+    bookmarks = []
+    global_categories_seen = {} 
+
+    filter_set = set(filter_category_names) if filter_category_names else None
 
     for item, content, ai_summary in paged_results:
-        # Map categories and build unique list simultaneously
-        tags = []
-        for cat in content.categories:
-            tag = CategoryOut.from_orm(cat)
-            tags.append(tag)
-            category_map[tag.category_id] = tag
+        item_categories = [CategoryOut.from_orm(cat) for cat in content.categories]
+        item_user_tags = [TagOut.from_orm(t) for t in item.tags]
 
-        bookmark_data.append(
+        if filter_set:
+            category_names = {cat.category_name for cat in item_categories}
+            if not category_names.intersection(filter_set):
+                continue  
+
+        for cat in item_categories:
+            global_categories_seen[cat.category_id] = cat
+
+
+# class UserSavedContent(BaseModel):
+#     content_id: UUID
+#     url: str
+#     title: Optional[str]
+#     source: Optional[str]
+#     ai_summary: Optional[str]
+#     first_saved_at: datetime
+#     notes: Optional[str]
+#     tags: Optional[list[CategoryOut]]
+        bookmarks.append(
             UserSavedContent(
                 content_id=content.content_id,
                 url=content.url,
@@ -281,19 +217,173 @@ def get_unread_content_service(cursor: str, user_id: UUID, db: Session):
                 ai_summary=ai_summary,
                 first_saved_at=item.saved_at,
                 notes=item.notes,
-                tags=tags
+                tags=item_user_tags,
+                categories=item_categories
+        
             )
         )
 
-    # Calculate next_cursor based on the last item in our paged results
-    next_cursor = bookmark_data[-1].first_saved_at.isoformat() if bookmark_data else None
+    # 4. Prepare Response
+    next_cursor = bookmarks[-1].first_saved_at.isoformat() if bookmarks else None
 
     return {
-        "bookmarks": bookmark_data,
-        "categories": list(category_map.values())[:10],
+        "bookmarks": bookmarks,
+        "categories": list(global_categories_seen.values())[:10],
         "next_cursor": next_cursor,
         "has_next": has_next
     }
+
+
+
+def get_unread_content_service(
+    cursor: str, 
+    filter_category_names: list[str], 
+    user_id: UUID, 
+    db: Session
+):
+    PAGE_SIZE = 9
+    
+    cursor_dt = None
+    if cursor:
+        try:
+            cursor_dt = isoparse(cursor)
+        except (ValueError, TypeError):
+            raise ValueError("Datetime for cursor is wrongly formatted")
+
+
+    query = (
+        db.query(ContentItem, Content, ContentAI.ai_summary)
+        .join(Content, ContentItem.content_id == Content.content_id)
+        .outerjoin(ContentAI, Content.content_id == ContentAI.content_id)
+        .options(
+            joinedload(Content.categories),
+            joinedload(ContentItem.tags) 
+        )
+        .filter(ContentItem.user_id == user_id, ContentItem.read == False)
+    )
+
+    if cursor_dt:
+        query = query.filter(ContentItem.saved_at < cursor_dt)
+
+    results = query.order_by(desc(ContentItem.saved_at)).limit(PAGE_SIZE + 1).all()
+    
+    has_next = len(results) > PAGE_SIZE
+    paged_results = results[:PAGE_SIZE]
+
+    bookmarks = []
+    global_categories_seen = {} 
+
+    filter_set = set(filter_category_names) if filter_category_names else None
+
+    for item, content, ai_summary in paged_results:
+        item_categories = [CategoryOut.from_orm(cat) for cat in content.categories]
+        item_user_tags = [TagOut.from_orm(t) for t in item.tags]
+
+        if filter_set:
+            category_names = {cat.category_name for cat in item_categories}
+            if not category_names.intersection(filter_set):
+                continue  
+
+        for cat in item_categories:
+            global_categories_seen[cat.category_id] = cat
+
+
+# class UserSavedContent(BaseModel):
+#     content_id: UUID
+#     url: str
+#     title: Optional[str]
+#     source: Optional[str]
+#     ai_summary: Optional[str]
+#     first_saved_at: datetime
+#     notes: Optional[str]
+#     tags: Optional[list[CategoryOut]]
+        bookmarks.append(
+            UserSavedContent(
+                content_id=content.content_id,
+                url=content.url,
+                title=content.title,
+                source=content.source,
+                ai_summary=ai_summary,
+                first_saved_at=item.saved_at,
+                notes=item.notes,
+                tags=item_user_tags,
+                categories=item_categories
+        
+            )
+        )
+
+    # 4. Prepare Response
+    next_cursor = bookmarks[-1].first_saved_at.isoformat() if bookmarks else None
+
+    return {
+        "bookmarks": bookmarks,
+        "categories": list(global_categories_seen.values())[:10],
+        "next_cursor": next_cursor,
+        "has_next": has_next
+    }
+
+# def get_unread_content_service(cursor: str, user_id: UUID, db: Session):
+#     PAGE_SIZE = 9
+#     cursor_dt = None
+    
+#     if cursor:
+#         try:
+#             cursor_dt = isoparse(cursor)
+#         except (ValueError, TypeError):
+#             raise ValueError("Invalid cursor format")
+
+#     # 1. Build the base query
+#     query = (
+#         db.query(ContentItem, Content, ContentAI.ai_summary)
+#         .join(Content, ContentItem.content_id == Content.content_id)
+#         .outerjoin(ContentAI, Content.content_id == ContentAI.content_id)
+#         .options(joinedload(Content.categories))
+#         .filter(ContentItem.user_id == user_id, ContentItem.read == False)
+#     )
+
+#     # 2. IMPORTANT: Re-assign the filtered query
+#     if cursor_dt:
+#         query = query.filter(ContentItem.saved_at < cursor_dt)
+
+#     # 3. Order and Limit (fetch PAGE_SIZE + 1 to check for has_next)
+#     results = query.order_by(desc(ContentItem.saved_at)).limit(PAGE_SIZE + 1).all()
+
+#     has_next = len(results) > PAGE_SIZE
+#     paged_results = results[:PAGE_SIZE]
+
+#     bookmark_data = []
+#     category_map = {}
+
+#     for item, content, ai_summary in paged_results:
+#         # Map categories and build unique list simultaneously
+#         tags = []
+#         for cat in content.categories:
+#             tag = CategoryOut.from_orm(cat)
+#             tags.append(tag)
+#             category_map[tag.category_id] = tag
+
+#         bookmark_data.append(
+#             UserSavedContent(
+#                 content_id=content.content_id,
+#                 url=content.url,
+#                 title=content.title,
+#                 source=content.source,
+#                 ai_summary=ai_summary,
+#                 first_saved_at=item.saved_at,
+#                 notes=item.notes,
+#                 tags=tags
+#             )
+#         )
+
+#     # Calculate next_cursor based on the last item in our paged results
+#     next_cursor = bookmark_data[-1].first_saved_at.isoformat() if bookmark_data else None
+
+#     return {
+#         "bookmarks": bookmark_data,
+#         "categories": list(category_map.values())[:10],
+#         "next_cursor": next_cursor,
+#         "has_next": has_next
+#     }
 
 
 

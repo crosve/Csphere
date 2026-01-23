@@ -54,6 +54,7 @@ def create_tag(tag_data: TagCreationData   , user_id: UUID=Depends(get_current_u
 @router.get('/tag', status_code=200)
 def get_tags(user_id: UUID = Depends(get_current_user_id), db : Session = Depends(get_db)):
     try:
+        print("getting the tags")
         return get_user_tags_service(user_id=user_id, db=db)
         
     except Exception as e: 

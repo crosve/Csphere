@@ -5,9 +5,15 @@ import { LayoutContext } from "@/app/(content)/home/BookmarkLayout";
 import FolderBookmarkCard from "./folder/FolderBookmarkCard";
 
 interface Tag {
+  tag_id: string;
+  tag_name: string;
+}
+
+interface Category {
   category_id: string;
   category_name: string;
 }
+
 type Bookmark = {
   content_id: string;
   title?: string;
@@ -15,6 +21,7 @@ type Bookmark = {
   ai_summary?: string;
   url: string;
   tags?: Tag[];
+  categories?: Category[];
 };
 
 export default function BookmarkList({
@@ -32,7 +39,7 @@ export default function BookmarkList({
 }) {
   const viewMode = useContext(LayoutContext);
 
-  console.log("is folder: ", isFolder);
+  console.log("all items: ", items);
   if (items.length === 0) {
     return <p className="text-center text-gray-500">No bookmarks found</p>;
   }

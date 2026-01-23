@@ -25,8 +25,10 @@ let selectedTags = [];
  * ========================================== */
 async function init() {
   const token = await getAuthToken();
-  if (!token) {
+  console.log("current auth token: ", token);
+  if (!token || token === undefined) {
     renderLoginView();
+    return;
   } else {
     renderMainView();
   }
@@ -501,6 +503,7 @@ async function handleSaveBookmark() {
 
   try {
     const { html, tab } = await extractHTMLFromPage();
+    console.log("got the html extraction");
     const payload = {
       url: tab.url,
       title: tab.title,
@@ -583,17 +586,97 @@ async function extractHTMLFromPage() {
 }
 
 function renderLoginView() {
-  appContainer.innerHTML = `
-    <div class="login-container">
-      <header class="login_header"><img class="logo" src="images/Csphere-icon-128.png" /></header>
-      <div class="login-message">
-        <form id="loginForm" class="login-form">
-          <input type="text" id="username" placeholder="Username" required />
-          <input type="password" id="password" placeholder="Password" required />
-          <button type="submit" class="primary-button">Log In</button>
-        </form>
-      </div>
+  app.innerHTML = `
+    <header class="login_header">
+      <a href = "https://csphere.io/"  target="_blank"> 
+        <img class="logo" src="images/Csphere-icon-128.png" />
+      </a>
+    </header>
+    <div class="login-message">
+      <p>Please log in to use Csphere bookmarks</p>
+      <form id="loginForm" class="login-form">
+        <input type="text" id="username" placeholder="Username" required />
+        <input type="password" id="password" placeholder="Password" required />
+        <button type="submit" class="primary-button">Log In</button>
+      </form>
+      <div class="divider">OR</div>
+      <button id="googleAuthBtn" class="google-button">
+        <img src="images/google.svg" class="google-icon" />
+        Continue with Google
+      </button>
+      <p class="message-p"></p>
     </div>
   `;
-  // Add login event listeners here (omitted for brevity)
+
+  document.getElementById("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+    try {
+      const LOGIN_URL = `${BASE_URL}/user/browser/login`;
+      const response = await fetch(LOGIN_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await response.json();
+      if (data?.detail?.trim() === "Incorrect password") {
+        insertMessage("Incorrect password", "error");
+        return;
+      }
+      if (data?.detail?.trim() === "User not found") {
+        insertMessage("User not found", "error");
+        return;
+      }
+      if (data?.detail?.trim() === "sucessful login") {
+        browser.storage.local.set({ csphere_user_token: data.token }, () => {
+          renderMainView();
+        });
+      }
+    } catch (error) {
+      console.log("error logging in: ", error);
+    }
+  });
+
+  document.getElementById("googleAuthBtn").addEventListener("click", () => {
+    browser.identity.launchWebAuthFlow(
+      {
+        url: `${BASE_URL}/auth/google`,
+        interactive: true,
+      },
+      (redirectUrl) => {
+        if (browser.runtime.lastError || !redirectUrl) {
+          console.error("Google login failed", browser.runtime.lastError);
+          return;
+        }
+        const url = new URL(redirectUrl);
+        const code = url.searchParams.get("code");
+        if (!code) {
+          console.error("Token missing from redirect");
+          return;
+        }
+        fetch(`${BASE_URL}/auth/google/callback`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (!data.token) {
+              console.error("Token missing from backend response");
+              return;
+            }
+            browser.storage.local.set(
+              { csphere_user_token: data.token },
+              () => {
+                renderMainView();
+              },
+            );
+          })
+          .catch((err) => {
+            console.error("Error fetching token from backend", err);
+          });
+      },
+    );
+  });
 }

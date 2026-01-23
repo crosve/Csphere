@@ -1,4 +1,9 @@
 interface Tag {
+  tag_id: string;
+  tag_name: string;
+}
+
+interface Category {
   category_id: string;
   category_name: string;
 }
@@ -11,5 +16,7 @@ export interface Bookmark {
   ai_summary?: string;
   first_saved_at?: string; // ISO timestamp, might also be Date if parsed
   tags?: Tag[];
+  categories?: Category[];
+
   notes?: string;
 }

@@ -3,7 +3,7 @@ from sqlalchemy.orm import relationship, Mapped
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 
-from app.db.database import Base
+from database import Base
 import uuid
 from app.data_models.content_category import ContentCategory
 from app.data_models.content_tag import ContentTag
