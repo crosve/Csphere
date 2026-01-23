@@ -1,4 +1,4 @@
-const htmlContent = document.documentElement.outerHTML;
+var htmlContent = document.documentElement.outerHTML;
 
 browser.runtime.sendMessage({
   action: "htmlExtracted",
