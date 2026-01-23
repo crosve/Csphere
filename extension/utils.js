@@ -47,7 +47,7 @@ async function getActiveTab() {
 
 // exposing the functions globally for all scripts
 
-window.utils = {
+self.utils = {
   executeContentScript,
   getActiveTab,
 };
