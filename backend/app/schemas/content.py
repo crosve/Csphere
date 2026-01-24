@@ -1,5 +1,5 @@
 from pydantic import BaseModel, HttpUrl
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 from datetime import datetime
 
@@ -72,3 +72,27 @@ class UserSavedContentResponse(BaseModel):
     categories: Optional[list[CategoryOut] ] = []
     next_cursor: Optional[str] = ''
     has_next: Optional[bool] = False
+
+
+
+class BookmarkNode(BaseModel):
+    id: str
+    title: str
+    parentId: Optional[str] = None
+    index: Optional[int] = None
+    url: Optional[str] = None  # Only present on bookmarks
+    dateAdded: Optional[float] = None
+    dateLastUsed: Optional[float] = None
+    # 'children' makes the model recursive
+    children: Optional[List["BookmarkNode"]] = None 
+    
+    # These fields appear on specific folders like the Bookmarks Bar
+    folderType: Optional[str] = None
+    dateGroupModified: Optional[float] = None
+
+    class Config:
+        # This allows the model to handle the recursive 'BookmarkNode' reference
+        arbitrary_types_allowed = True
+
+class BookmarkImportRequest(BaseModel):
+    bookmarks: List[BookmarkNode]

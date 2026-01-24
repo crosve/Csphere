@@ -1,25 +1,56 @@
+# 1. Standard Library Imports
+import logging
+from uuid import UUID
+
+# 2. Third-Party Imports (FastAPI, SQLAlchemy)
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session
+
+# 3. Database & Models (Internal Data Structure)
 from app.db.database import get_db
+from app.data_models.user import User
 from app.data_models.content import Content
 from app.data_models.content_item import ContentItem
-from app.schemas.content import ContentCreate, ContentSavedByUrl, ContentWithSummary, TabRemover, NoteContentUpdate, UserSavedContentResponse
-from app.data_models.user import User
 
+# 4. Schemas (Pydantic / Request-Response shapes)
+from app.schemas.content import (
+    ContentCreate, 
+    ContentSavedByUrl, 
+    ContentWithSummary, 
+    TabRemover, 
+    NoteContentUpdate, 
+    UserSavedContentResponse, 
+    BookmarkImportRequest
+)
+
+# 5. Utilities & Security
 from app.utils.hashing import get_current_user_id
 from app.utils.user import get_current_user
 from app.utils.url import ensure_safe_url
-from sqlalchemy.orm import Session
-from uuid import UUID
 
-from app.services.content_services import (search_content,
- _enqueue_new_content, get_total_unread_count,
- get_unread_content_service, get_content_service, 
- update_note_service, tab_content, untabContent,
- delete_content, get_recent_saved_content)
+# 6. Service Layer (Business Logic)
+from app.services.content_services import (
+    search_content,
+    get_total_unread_count,
+    get_unread_content_service,
+    get_content_service, 
+    update_note_service, 
+    tab_content, 
+    untabContent,
+    delete_content, 
+    get_recent_saved_content, 
+    import_browser_bookmarks_service,
+    _enqueue_new_content
+)
 
-from app.exceptions.content_exceptions import EmbeddingManagerNotFound, NoMatchedContent, NotesNotFound, ContentItemNotFound, ContentNotFound
-
-import logging
+# 7. Exceptions
+from app.exceptions.content_exceptions import (
+    EmbeddingManagerNotFound, 
+    NoMatchedContent, 
+    NotesNotFound, 
+    ContentItemNotFound, 
+    ContentNotFound
+)
 
 logger = logging.getLogger(__name__)
 
@@ -299,3 +330,21 @@ def get_recent_content(user_id: UUID = Depends(get_current_user_id), db: Session
     except Exception as e:
         logger.error(f"Error occured in api endpoint '/content/recent' : {e}")
         return []  
+
+
+
+@router.post("/import", status_code=200)
+def import_browser_bookmarks(bookmark_data : BookmarkImportRequest, user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
+
+    try:
+        return import_browser_bookmarks_service(bookmark_data=bookmark_data, user_id=user_id, db=db)
+
+
+    except Exception as e:
+        logging.error(f"Error occured when trying to sync all bookmarks: {e}")
+        return HTTPException(
+            status_code=500,
+            detail="Failed to save the browser data, try again"
+        )
+
+    

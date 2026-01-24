@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Collapsible, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import Account from "@/app/components/settings/Account";
+import DataSettings from "@/app/components/settings/DataSettings";
 import { motion, AnimatePresence } from "framer-motion";
 
 const collapseVariants = {
@@ -10,7 +11,7 @@ const collapseVariants = {
   collapsed: { opacity: 0, height: 0 },
 };
 
-const tabs = ["Account", "Notification", "Privacy", "Appearance"];
+const tabs: string[] = ["Account", "Notification", "Privacy", "Data"];
 
 interface TabContent {
   title: string;
@@ -23,6 +24,9 @@ const CollapsibleTab = ({ title }: TabContent) => {
     switch (title.toLowerCase()) {
       case "account":
         return <Account />;
+
+      case "data":
+        return <DataSettings />;
 
       default:
         return <h1>Coming soon!</h1>;

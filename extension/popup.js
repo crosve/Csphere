@@ -138,6 +138,11 @@ function renderMainView() {
 
         <!-- Recent bookmarks pannel-->
         <div class="tab-panel ${activeTab === "recent" ? "active" : ""}" id="recent-panel">
+          <div class="sync-actions" style="padding: 10px; border-bottom: 1px solid #eee;">
+          <button id="syncChromeBtn" class="secondary-button" style="width: 100%;">
+            Sync Chrome Bookmarks
+          </button>
+        </div>
           <div class="scroll-area" id="recentListContainer">
              <div class="empty-state"><p>Loading recent bookmarks...</p></div>
           </div>
@@ -189,6 +194,10 @@ function attachEventListeners() {
   document
     .getElementById("saveBookmarkBtn")
     ?.addEventListener("click", handleSaveBookmark);
+
+  document
+    .getElementById("syncChromeBtn")
+    ?.addEventListener("click", syncAllBrowserBookmarks);
 }
 
 async function loadContextualData() {
@@ -678,4 +687,31 @@ function renderLoginView() {
       },
     );
   });
+}
+
+async function syncAllBrowserBookmarks() {
+  console.log("Checking for bookmarks API...");
+
+  // Directly check the chrome global, ignoring the polyfill for a moment
+  if (typeof chrome !== "undefined" && chrome.bookmarks) {
+    const bookmarkTree = await chrome.bookmarks.getTree();
+    console.log("Success! Tree found:", bookmarkTree);
+
+    const bookmarkData = bookmarkTree[0].children;
+    console.log("bookmark data: ", bookmarkData);
+
+    const body = {
+      bookmarks: bookmarkData,
+    };
+
+    //Do the api request now
+    const data = await apiRequest("/content/import", "POST", body);
+
+    console.log("Returned data: ", data);
+  } else {
+    console.error(
+      "Still not found. Manifest permissions are definitely active, but API is not injected.",
+    );
+    showStatus("Extension needs a full Chrome restart", "error");
+  }
 }
