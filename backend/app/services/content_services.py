@@ -585,7 +585,7 @@ def import_browser_bookmarks_service(bookmark_data: BookmarkImportRequest, user_
 
         message = json.dumps(payload)
         result = push_to_activemq(message=message)
-        if result.status_code == 200:
+        if result:
             continue 
         else:
             logging.error('Failed to push to active mq')

@@ -12,6 +12,8 @@ let activeFolderId = "default";
 let cachedFolders = []; // Store folders here to use across tabs
 let recentBookmarksList = [];
 
+let isSettingsActive = false;
+
 let selectedViewFolder = null;
 let selectedViewFolderBookmarks = null; //Used to store the selected folder's bookmarks
 
@@ -81,7 +83,28 @@ function renderMainView() {
             <img class="logo" src="images/Csphere-icon-128.png" />
           </a>
         </div>
-        <button id="logoutBtn" class="logout-btn">logout</button>
+        
+          <div class="settings-container">
+              <button id="settingsToggleBtn" class="icon-btn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+              </button>
+
+              ${
+                isSettingsActive
+                  ? `
+                <div class="settings-dropdown">
+                  <div id="dropdown-item-sync-bookmark" class="dropdown-item">Sync Bookmarks</div>
+                  <div class="dropdown-item">Account Settings</div>
+                  <div class="dropdown-divider"></div>
+                  <button id="logoutBtn" class="dropdown-logout">Logout</button>
+                </div>
+              `
+                  : ""
+              }
+            </div>
       </header>
 
       <div class="tab-navigation">
@@ -139,9 +162,7 @@ function renderMainView() {
         <!-- Recent bookmarks pannel-->
         <div class="tab-panel ${activeTab === "recent" ? "active" : ""}" id="recent-panel">
           <div class="sync-actions" style="padding: 10px; border-bottom: 1px solid #eee;">
-          <button id="syncChromeBtn" class="secondary-button" style="width: 100%;">
-            Sync Chrome Bookmarks
-          </button>
+         
         </div>
           <div class="scroll-area" id="recentListContainer">
              <div class="empty-state"><p>Loading recent bookmarks...</p></div>
@@ -174,6 +195,17 @@ function attachEventListeners() {
       renderMainView();
     });
   });
+
+  document.querySelector(".icon-btn")?.addEventListener("click", () => {
+    isSettingsActive = !isSettingsActive;
+    renderMainView();
+  });
+
+  document
+    .getElementById("dropdown-item-sync-bookmark")
+    ?.addEventListener("click", async () => {
+      await syncAllBrowserBookmarks();
+    });
 
   document.getElementById("logoutBtn")?.addEventListener("click", () => {
     browser.storage.local.remove("csphere_user_token", () => renderLoginView());
@@ -380,7 +412,7 @@ function renderFoldersList() {
           (folder) => `
         <div class="folder-card" data-id="${folder.folderId}" data-name="${folder.folderName}">
           <div class="folder-card-icon">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="#4A90E2">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="#304b48">
               <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"></path>
             </svg>
           </div>
@@ -594,6 +626,8 @@ async function extractHTMLFromPage() {
 }
 
 function renderLoginView() {
+  isSettingsActive = false;
+
   app.innerHTML = `
     <header class="login_header">
       <a href = "https://csphere.io/"  target="_blank"> 
