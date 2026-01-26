@@ -1,6 +1,6 @@
 // components/BookmarkLayout.tsx
 "use client";
-import React, { ReactNode, useState, createContext, useEffect } from "react";
+import { ReactNode, useState, createContext, useEffect } from "react";
 import SearchInput from "@/components/SearchInput";
 import { Tabs } from "@/components/ui/tabs";
 import { fetchToken } from "@/functions/user/UserData";

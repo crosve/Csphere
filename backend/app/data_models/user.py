@@ -1,6 +1,8 @@
 from sqlalchemy import Column, String, TIMESTAMP
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, Mapped
+from pgvector.sqlalchemy import Vector
+
 from app.db.database import Base
 import uuid
 
@@ -14,6 +16,8 @@ class User(Base):
     password = Column(String, nullable=False)
     google_id = Column(String, nullable=True)
     profile_path = Column(String, default='')
+    user_embedding = Column(Vector(1536), nullable=True)
+    last_embedding_update = Column(TIMESTAMP, server_default="NOW()")
 
     # Updated relationship: Point directly to Tag
     # back_populates should match the attribute name in your Tag model (e.g., 'owner')
