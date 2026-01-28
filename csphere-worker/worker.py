@@ -19,7 +19,7 @@ from schemas.content_schemas import MessageSchema
 
 from contextlib import contextmanager
 
-from database import get_db, SessionLocal
+from database import SessionLocal
 
 @contextmanager
 def get_db_connection():
