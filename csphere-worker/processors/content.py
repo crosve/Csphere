@@ -46,7 +46,7 @@ class ContentProcessor(BaseProcessor):
 
             raw_html = message.get('raw_html', '')
 
-            if raw_html == '':
+            if not raw_html:
                 logging.info("No raw html provided, categorization and summarization may be poor")
                 raw_html = self.get_html_content(url=content_url)
 
