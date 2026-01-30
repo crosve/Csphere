@@ -5,6 +5,7 @@ import { BACKEND_URL, DEPLOYED } from "./config.dev.js";
  * ========================================== */
 const BASE_URL = DEPLOYED ? BACKEND_URL : "http://127.0.0.1:8000";
 const appContainer = document.getElementById("app");
+const utils = globalThis.utils;
 
 let activeTab = "bookmark";
 let activeTags = [];
@@ -14,6 +15,8 @@ let recentBookmarksList = [];
 
 let selectedViewFolder = null;
 let selectedViewFolderBookmarks = null; //Used to store the selected folder's bookmarks
+
+let statusTimeoutId = null;
 
 //Tag selection states
 let userTags = [];
@@ -125,13 +128,14 @@ function renderMainView() {
             <div class="section">
               <label class="section-label">Folder</label>
               <select id="folderDropdown" class="folder-select">
-                <option value="default">none selected</option>
+                <option value="default">Choose a folder...</option>
               </select>
             </div>
           </div>
           
           <div class="action-bar">
             <button id="saveBookmarkBtn" class="primary-button">Bookmark Page</button>
+            <p class="status-message"></p>
           </div>
         </div>
 
@@ -151,7 +155,6 @@ function renderMainView() {
         </div>
       </div>
 
-      <p class="status-message"></p>
     </div>
   `;
 
@@ -330,7 +333,7 @@ async function fetchFolders() {
     // Update dropdown if we are on the bookmark tab
     const dropdown = document.getElementById("folderDropdown");
     if (dropdown) {
-      dropdown.innerHTML = `<option value="default">none selected</option>`;
+      dropdown.innerHTML = `<option value="default">Choose a folder...</option>`;
       cachedFolders.forEach((f) => {
         const opt = document.createElement("option");
         opt.value = f.folderId;
@@ -438,7 +441,7 @@ async function renderFolderDetailView(container) {
           <h4 class="bookmark-title">${b.title || "Untitled"}</h4>
           <span class="bookmark-date">${new Date(b.created_at || b.first_saved_at).toLocaleDateString()}</span>
         </div>
-        <a href="${b.url}" target="_blank" class="bookmark-url">visit</a>
+        <a href="${b.url}" target="_blank" class="bookmark-url">Visit</a>
         <div class="bookmark-tags">
           ${(b.tags || []).map((t) => `<span class="bookmark-tag">${t}</span>`).join("")}
         </div>
@@ -482,7 +485,7 @@ async function renderRecentBookmarks() {
           <h4 class="bookmark-title">${b.title || "Untitled"}</h4>
           <span class="bookmark-date">${new Date(b.created_at || b.first_saved_at).toLocaleDateString()}</span>
         </div>
-        <a href="${b.url}" target="_blank" class="bookmark-url">visit</a>
+        <a href="${b.url}" target="_blank" class="bookmark-url">Visit</a>
         <div class="bookmark-tags">
           ${(b.tags || []).map((t) => `<span class="bookmark-tag">${t}</span>`).join("")}
         </div>
@@ -501,15 +504,14 @@ async function handleSaveBookmark() {
   btn.disabled = true;
 
   try {
-    const { html, tab } = await extractHTMLFromPage();
-    console.log("got the html extraction");
+    const tab = await utils.getActiveTab();
     const payload = {
       url: tab.url,
       title: tab.title,
       notes: document.getElementById("notesTextarea").value,
-      html: html,
       tags: selectedTags,
       folder_id: activeFolderId !== "default" ? activeFolderId : null,
+      source: "extension",
     };
 
     console.log("sending request over", payload);
@@ -560,9 +562,22 @@ function renderTags() {
 function showStatus(msg, type) {
   const el = document.querySelector(".status-message");
   if (!el) return;
+
+  const actionBar = el.closest(".action-bar");
+  if (!actionBar) return;
+
+  if (statusTimeoutId) clearTimeout(statusTimeoutId);
+
   el.textContent = msg;
   el.style.color = type === "error" ? "#ff4d4d" : "#2ecc71";
-  setTimeout(() => (el.textContent = ""), 4000);
+
+  actionBar.classList.add("action-bar--with-status");
+
+  statusTimeoutId = setTimeout(() => {
+    el.textContent = "";
+    actionBar.classList.remove("action-bar--with-status");
+    statusTimeoutId = null;
+  }, 4000);
 }
 
 function resetBookmarkForm() {
@@ -574,14 +589,8 @@ function resetBookmarkForm() {
 }
 
 async function extractHTMLFromPage() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-  const [{ result }] = await chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    func: () => document.documentElement.outerHTML,
-  });
-
-  return { html: result, tab };
+  const tab = await utils.getActiveTab();
+  return { html: null, tab };
 }
 
 function renderLoginView() {

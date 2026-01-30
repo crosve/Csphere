@@ -24,24 +24,40 @@
 body {
   background-color: var(--bg-color);
   color: var(--text-color);
-  width: 360px;
-  min-height: 400px;
+}
+
+html,
+body {
+  width: 360px;     
+  margin: 0;   
+  overflow: hidden;
 }
 
 #app {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: 0;
 }
+
+ #app.app--main {
+  height: 525px;
+ }
 
 /* Extension Popup Container */
 .extension-popup {
-  width: 500px;
-  height: 500px;
+  width: 100%;
+  max-height: 525px;
   background: white;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  border-radius: 8px;
+  overflow: hidden;
 }
+
+ #app.app--main .extension-popup {
+  height: 525px;
+ }
 
 /* Header Styles */
 .popup-header {
@@ -116,14 +132,18 @@ body {
 
 /* Tab Content */
 .tab-content {
+  display: flex;
+  flex-direction: column;
   flex: 1;
   overflow: hidden;
+  min-height: 0;
 }
 
 .tab-panel {
   display: none;
-  height: 100%;
+  flex: 1;
   flex-direction: column;
+  min-height: 0;
 }
 
 .tab-panel.active {
@@ -133,7 +153,9 @@ body {
 .scroll-area {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 12px;
+  min-height: 0;
 }
 
 /* Notes Container */
@@ -144,6 +166,10 @@ body {
   border: 1px solid #e0e0e0;
   padding: 4px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.status-message {
+  text-align: center;
 }
 
 .notes-textarea {
@@ -251,14 +277,12 @@ body {
   width: 100%;
 }
 
-.folder-select {
-  width: 100%;
-  padding: 6px 8px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  font-size: 12px;
-  background-color: white;
+.action-bar--with-status .primary-button {
+  width: auto;
+  flex: 1;
 }
+
+
 
 /* Recent Bookmarks */
 .bookmark-card {
@@ -376,6 +400,23 @@ body {
 .action-bar {
   padding: 12px;
   border-top: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.action-bar--with-status {
+  justify-content: space-between;
+}
+
+.action-bar .status-message {
+  margin: 0;
+  padding: 0;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .primary-button {
@@ -733,7 +774,8 @@ body {
   opacity: 1;
 }
 
-/* Dropdown Style */
+/*
+
 .modern-select {
   width: 100%;
   padding: 8px 12px;
@@ -742,6 +784,30 @@ body {
   background-color: white;
   font-size: 13px;
   cursor: pointer;
+}
+
+.folder-select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 12px;
+  background-color: white;
+}
+*/
+
+/* Make dropdowns consistent */
+.folder-select,
+.modern-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5da;
+  border-radius: 6px;
+  background-color: #fff;
+  font-size: 13px;
+  line-height: 1.2;
+  height: 36px;
+  box-sizing: border-box;
 }
 
 .select-hint {

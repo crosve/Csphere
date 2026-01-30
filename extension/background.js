@@ -1,4 +1,6 @@
-importScripts("utils.js");
+if (typeof importScripts === "function") {
+  importScripts("utils.js");
+}
 
 console.log("Background script loaded and running...");
 browser.runtime.onInstalled.addListener(() => {
@@ -11,7 +13,7 @@ browser.runtime.onInstalled.addListener(() => {
 const clickAction = browser.action || browser.browserAction;
 
 clickAction.onClicked.addListener(async (tab) => {
-  utils.executeContentScript(tab.id, "content.js");
+  globalThis.utils.executeContentScript(tab.id, "content.js");
 });
 
 // chrome.action.onClicked.addListener((tab) => {

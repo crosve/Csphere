@@ -1,7 +1,8 @@
-// polyfilling browser to ensure it exists in Chrome MV3
+const root = typeof globalThis !== "undefined" ? globalThis : self;
 
-if (typeof browser == "undefined") {
-  window.browser = chrome;
+// polyfilling browser to ensure it exists in Chrome MV3 and MV2 contexts
+if (typeof root.browser === "undefined" && typeof root.chrome !== "undefined") {
+  root.browser = root.chrome;
 }
 /*
 Cross-browser/version replacement for executeScript 
@@ -27,17 +28,17 @@ function executeContentScript(tabId, file) {
 Getting active tab across browsers
 */
 async function getActiveTab() {
-  if (browser.tabs && browser.tabs.query) {
-    const [tab] = await browser.tabs.query({
+  if (root.browser?.tabs?.query) {
+    const [tab] = await root.browser.tabs.query({
       active: true,
       currentWindow: true,
     });
     return tab;
   }
 
-  if (chrome.tabs && chrome.tabs.query) {
+  if (root.chrome?.tabs?.query) {
     return new Promise((resolve) => {
-      chrome.tabs.query({ active: true }, (tabs) => resolve(tabs[0]));
+      root.chrome.tabs.query({ active: true }, (tabs) => resolve(tabs[0]));
     });
   }
 
@@ -46,8 +47,7 @@ async function getActiveTab() {
 }
 
 // exposing the functions globally for all scripts
-
-self.utils = {
+root.utils = {
   executeContentScript,
   getActiveTab,
 };

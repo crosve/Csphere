@@ -9,7 +9,7 @@ class NoteContentUpdate(BaseModel):
     bookmarkID: UUID
 
 
-class ContentCreatTags(BaseModel):
+class ContentCreateTags(BaseModel):
      tag_name: str
      tag_id: str
 
@@ -17,10 +17,11 @@ class ContentCreatTags(BaseModel):
 class ContentCreate(BaseModel):
     url: str
     title: Optional[str]
-    tags: Optional[list[ContentCreatTags]]
+    tags: Optional[list[ContentCreateTags]]
     notes: Optional[str]
     folder_id: Optional[UUID] = None
-    html: str
+    html: Optional[str] = None
+    source: Optional[str] = "extension"
 
 class TabRemover(BaseModel):
     content_id: UUID 
