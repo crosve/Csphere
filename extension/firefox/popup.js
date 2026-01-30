@@ -513,13 +513,13 @@ async function handleSaveBookmark() {
     const payload = {
       url: tab.url,
       title: tab.title,
-      source: "extension",
+      source: "firefox_extension",
       notes: notesValue && notesValue.trim() ? notesValue : null,
       tags: (selectedTags || []).map((t) => ({
         tag_id: t.tag_id,
         tag_name: t.tag_name,
       })),
-      folder_id: activeFolderId !== "default" ? activeFolderId : null,
+      folder_id: activeFolderId !== "default" ? activeFolderId : null
     };
 
     console.log("sending request over", payload);

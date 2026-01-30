@@ -61,9 +61,8 @@ class ContentProcessor(BaseProcessor):
             #update the content Embedding manager when necessary 
             content_manager = ContentEmbeddingManager(db=self.db, content_url=new_content.url)
 
-            raw_html = message.get('raw_html', '')
-
-            if not raw_html or raw_html == '':
+            raw_html = message.get('raw_html')
+            if not raw_html:
                 logging.info("No raw html provided, categorization and summarization may be poor")
                 raw_html = self.capture_page(url=content_url)
 

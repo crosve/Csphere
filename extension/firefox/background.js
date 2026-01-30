@@ -1,6 +1,25 @@
+<<<<<<< HEAD:extension/firefox/background.js
 console.log("Background script loaded (Firefox MV2)...");
 browser.runtime.onInstalled.addListener(() => {
   console.log("Extension installed (Firefox MV2 background)");
+=======
+if (typeof importScripts === "function") {
+  importScripts("utils.js");
+}
+
+console.log("Background script loaded and running...");
+browser.runtime.onInstalled.addListener(() => {
+  console.log("Extension installed and background script running...");
+});
+
+// For firefox MV2: browser.browserAction
+// For chrome/edge/opera: browser.action
+
+const clickAction = browser.action || browser.browserAction;
+
+clickAction.onClicked.addListener(async (tab) => {
+  globalThis.utils.executeContentScript(tab.id, "content.js");
+>>>>>>> f3f1ac9 (Refactor: enqueue-only + worker HTML fetch):extension/background.js
 });
 
 // chrome.action.onClicked.addListener((tab) => {

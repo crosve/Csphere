@@ -516,7 +516,7 @@ async function handleSaveBookmark() {
     const payload = {
       url: tab.url,
       title: tab.title,
-      source: "extension",
+      source: "chrome_extension",
       notes: notesValue && notesValue.trim() ? notesValue : null,
       tags: (selectedTags || []).map((t) => ({
         tag_id: t.tag_id,

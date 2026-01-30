@@ -13,7 +13,7 @@ import logging
 from sqlalchemy.orm import joinedload
 from dateutil.parser import isoparse
 from app.core.settings import get_settings
-from app.schemas.content import ContentCreatTags
+from app.schemas.content import ContentCreateTags
 from app.schemas.tag import TagOut
 
 from sqlalchemy.orm import Session
@@ -130,7 +130,7 @@ def _enqueue_new_content(
     source: str,
     user_id: UUID,
     notes: str | None,
-    tags: list[ContentCreatTags ]| None,
+    tags: list[ContentCreateTags ]| None,
     folder_id: str | UUID | None,
 ) -> None:
     utc_time = datetime.now(timezone.utc)

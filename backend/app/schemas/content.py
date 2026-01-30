@@ -4,12 +4,13 @@ from uuid import UUID
 from datetime import datetime
 
 from app.schemas.tag import TagOut
+
 class NoteContentUpdate(BaseModel):
     notes: str
     bookmarkID: UUID
 
 
-class ContentCreatTags(BaseModel):
+class ContentCreateTags(BaseModel):
      tag_name: str
      tag_id: str
 
@@ -18,9 +19,10 @@ class ContentCreate(BaseModel):
     url: str
     title: Optional[str] = None
     source: str
-    tags: Optional[list[ContentCreatTags]] = None
+    tags: Optional[list[ContentCreateTags]] = None
     notes: Optional[str] = None
     folder_id: Optional[UUID] = None
+
 
 class TabRemover(BaseModel):
     content_id: UUID 

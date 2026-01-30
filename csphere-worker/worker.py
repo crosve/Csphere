@@ -1,16 +1,13 @@
 import json
 import requests
-
+import logging
+import time
 import os
+
 from uuid import uuid4
 from email.utils import quote
-import time
-
-import logging
-
 
 from dotenv import load_dotenv
-
 
 from processors import get_processor
 from processors.bucket import BucketProcessor
@@ -45,20 +42,14 @@ load_dotenv()
 
 
 def handle_message(message : dict, pydantic_message : MessageSchema):
-
-    #
     try:
 
         with get_db_connection() as db:
-            print('here 1')
             messageProcessor : ContentProcessor = get_processor('process_message', db )
             logging.info("got the processor")
             content_id : str = messageProcessor.process(message=message)
 
             logging.info(f'content id returned after processing message: {content_id}')
-
-            print('here')
-
             #only process if there is no folder id
             if content_id and pydantic_message.folder_id in ['default', None, '']:
                 logging.info('processing the content for folders')

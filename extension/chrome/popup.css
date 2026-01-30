@@ -581,7 +581,7 @@ body {
   margin-top: 8px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  float: right; /* Aligns it to the right as you requested */
+  float: right;
 }
 
 /* Clearfix for the parent card so the float doesn't break layout */
