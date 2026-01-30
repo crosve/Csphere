@@ -6,16 +6,21 @@ import { BACKEND_URL, DEPLOYED } from "./config.dev.js";
 const BASE_URL = DEPLOYED ? BACKEND_URL : "http://127.0.0.1:8000";
 const appContainer = document.getElementById("app");
 
+async function getActiveTab() {
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  return tab;
+}
+
 let activeTab = "bookmark";
 let activeTags = [];
 let activeFolderId = "default";
 let cachedFolders = []; // Store folders here to use across tabs
 let recentBookmarksList = [];
 
-let isSettingsActive = false;
-
 let selectedViewFolder = null;
 let selectedViewFolderBookmarks = null; //Used to store the selected folder's bookmarks
+
+let statusTimeoutId = null;
 
 //Tag selection states
 let userTags = [];
@@ -83,28 +88,7 @@ function renderMainView() {
             <img class="logo" src="images/Csphere-icon-128.png" />
           </a>
         </div>
-        
-          <div class="settings-container">
-              <button id="settingsToggleBtn" class="icon-btn">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="3"></circle>
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                </svg>
-              </button>
-
-              ${
-                isSettingsActive
-                  ? `
-                <div class="settings-dropdown">
-                  <div id="dropdown-item-sync-bookmark" class="dropdown-item">Sync Bookmarks</div>
-                  <div class="dropdown-item">Account Settings</div>
-                  <div class="dropdown-divider"></div>
-                  <button id="logoutBtn" class="dropdown-logout">Logout</button>
-                </div>
-              `
-                  : ""
-              }
-            </div>
+        <button id="logoutBtn" class="logout-btn">logout</button>
       </header>
 
       <div class="tab-navigation">
@@ -148,22 +132,20 @@ function renderMainView() {
             <div class="section">
               <label class="section-label">Folder</label>
               <select id="folderDropdown" class="folder-select">
-                <option value="default">none selected</option>
+                <option value="default">Choose a folder...</option>
               </select>
             </div>
           </div>
           
           <div class="action-bar">
             <button id="saveBookmarkBtn" class="primary-button">Bookmark Page</button>
+            <p class="status-message"></p>
           </div>
         </div>
 
 
         <!-- Recent bookmarks pannel-->
         <div class="tab-panel ${activeTab === "recent" ? "active" : ""}" id="recent-panel">
-          <div class="sync-actions" style="padding: 10px; border-bottom: 1px solid #eee;">
-         
-        </div>
           <div class="scroll-area" id="recentListContainer">
              <div class="empty-state"><p>Loading recent bookmarks...</p></div>
           </div>
@@ -177,7 +159,6 @@ function renderMainView() {
         </div>
       </div>
 
-      <p class="status-message"></p>
     </div>
   `;
 
@@ -195,18 +176,6 @@ function attachEventListeners() {
       renderMainView();
     });
   });
-
-  document.querySelector(".icon-btn")?.addEventListener("click", () => {
-    isSettingsActive = !isSettingsActive;
-    renderMainView();
-  });
-
-  document
-    .getElementById("dropdown-item-sync-bookmark")
-    ?.addEventListener("click", async () => {
-      await syncAllBrowserBookmarks();
-      showStatus("Imported succesfully", "success");
-    });
 
   document.getElementById("logoutBtn")?.addEventListener("click", () => {
     browser.storage.local.remove("csphere_user_token", () => renderLoginView());
@@ -227,10 +196,6 @@ function attachEventListeners() {
   document
     .getElementById("saveBookmarkBtn")
     ?.addEventListener("click", handleSaveBookmark);
-
-  document
-    .getElementById("syncChromeBtn")
-    ?.addEventListener("click", syncAllBrowserBookmarks);
 }
 
 async function loadContextualData() {
@@ -372,7 +337,7 @@ async function fetchFolders() {
     // Update dropdown if we are on the bookmark tab
     const dropdown = document.getElementById("folderDropdown");
     if (dropdown) {
-      dropdown.innerHTML = `<option value="default">none selected</option>`;
+      dropdown.innerHTML = `<option value="default">Choose a folder...</option>`;
       cachedFolders.forEach((f) => {
         const opt = document.createElement("option");
         opt.value = f.folderId;
@@ -413,7 +378,7 @@ function renderFoldersList() {
           (folder) => `
         <div class="folder-card" data-id="${folder.folderId}" data-name="${folder.folderName}">
           <div class="folder-card-icon">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="#304b48">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="#4A90E2">
               <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"></path>
             </svg>
           </div>
@@ -436,7 +401,7 @@ function renderFoldersList() {
         id: card.dataset.id,
         name: card.dataset.name,
       };
-      renderFoldersList();
+      renderFoldersList(); // Re-render to show detail view
     });
   });
 }
@@ -454,7 +419,6 @@ async function renderFolderDetailView(container) {
         <button id="backToFolders" class="back-btn">← Back</button>
         <h3>${selectedViewFolder.name}</h3>
       </div>
-      
         <h1>No bookmarks found for this folder</h1>
     </div>
   `;
@@ -481,12 +445,7 @@ async function renderFolderDetailView(container) {
           <h4 class="bookmark-title">${b.title || "Untitled"}</h4>
           <span class="bookmark-date">${new Date(b.created_at || b.first_saved_at).toLocaleDateString()}</span>
         </div>
-               <div class="bookmark-summary-box">
-          <p>${b.ai_summary || ""}</p>
-        
-
-        </div>
-        <a href="${b.url}" target="_blank" class="bookmark-url">visit</a>
+        <a href="${b.url}" target="_blank" class="bookmark-url">Visit</a>
         <div class="bookmark-tags">
           ${(b.tags || []).map((t) => `<span class="bookmark-tag">${t}</span>`).join("")}
         </div>
@@ -530,12 +489,7 @@ async function renderRecentBookmarks() {
           <h4 class="bookmark-title">${b.title || "Untitled"}</h4>
           <span class="bookmark-date">${new Date(b.created_at || b.first_saved_at).toLocaleDateString()}</span>
         </div>
-        <div class="bookmark-summary-box">
-          <p>${b.ai_summary || ""}</p>
-        
-
-        </div>
-        <a href="${b.url}" target="_blank" class="bookmark-url">visit</a>
+        <a href="${b.url}" target="_blank" class="bookmark-url">Visit</a>
         <div class="bookmark-tags">
           ${(b.tags || []).map((t) => `<span class="bookmark-tag">${t}</span>`).join("")}
         </div>
@@ -554,14 +508,17 @@ async function handleSaveBookmark() {
   btn.disabled = true;
 
   try {
-    const { html, tab } = await extractHTMLFromPage();
-    console.log("got the html extraction");
+    const tab = await getActiveTab();
+    const notesValue = document.getElementById("notesTextarea").value;
     const payload = {
       url: tab.url,
       title: tab.title,
-      notes: document.getElementById("notesTextarea").value,
-      html: html,
-      tags: selectedTags,
+      source: "extension",
+      notes: notesValue && notesValue.trim() ? notesValue : null,
+      tags: (selectedTags || []).map((t) => ({
+        tag_id: t.tag_id,
+        tag_name: t.tag_name,
+      })),
       folder_id: activeFolderId !== "default" ? activeFolderId : null,
     };
 
@@ -610,13 +567,25 @@ function renderTags() {
   });
 }
 
-//here
 function showStatus(msg, type) {
   const el = document.querySelector(".status-message");
   if (!el) return;
+
+  const actionBar = el.closest(".action-bar");
+  if (!actionBar) return;
+
+  if (statusTimeoutId) clearTimeout(statusTimeoutId);
+
   el.textContent = msg;
   el.style.color = type === "error" ? "#ff4d4d" : "#2ecc71";
-  setTimeout(() => (el.textContent = ""), 4000);
+
+  actionBar.classList.add("action-bar--with-status");
+
+  statusTimeoutId = setTimeout(() => {
+    el.textContent = "";
+    actionBar.classList.remove("action-bar--with-status");
+    statusTimeoutId = null;
+  }, 4000);
 }
 
 function resetBookmarkForm() {
@@ -629,6 +598,7 @@ function resetBookmarkForm() {
 
 //Doesn't etract html anymore
 async function extractHTMLFromPage() {
+<<<<<<< HEAD:extension/popup.js
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
   // const [{ result }] = await chrome.scripting.executeScript({
@@ -637,11 +607,13 @@ async function extractHTMLFromPage() {
   // });
 
   return { html: "", tab };
+=======
+  const tab = await getActiveTab();
+  return { html: null, tab };
+>>>>>>> a7c81e7 (Refactor: enqueue-only + worker HTML fetch):extension/firefox/popup.js
 }
 
 function renderLoginView() {
-  isSettingsActive = false;
-
   app.innerHTML = `
     <header class="login_header">
       <a href = "https://csphere.io/"  target="_blank"> 
@@ -735,31 +707,4 @@ function renderLoginView() {
       },
     );
   });
-}
-
-async function syncAllBrowserBookmarks() {
-  console.log("Checking for bookmarks API...");
-
-  // Directly check the chrome global, ignoring the polyfill for a moment
-  // if (typeof chrome !== "undefined" && chrome.bookmarks) {
-  //   const bookmarkTree = await chrome.bookmarks.getTree();
-  //   console.log("Success! Tree found:", bookmarkTree);
-
-  //   const bookmarkData = bookmarkTree[0].children;
-  //   console.log("bookmark data: ", bookmarkData);
-
-  //   const body = {
-  //     bookmarks: bookmarkData,
-  //   };
-
-  //   //Do the api request now
-  //   const data = await apiRequest("/content/import", "POST", body);
-
-  //   console.log("Returned data: ", data);
-  // } else {
-  //   console.error(
-  //     "Still not found. Manifest permissions are definitely active, but API is not injected.",
-  //   );
-  //   showStatus("Extension needs a full Chrome restart", "error");
-  // }
 }

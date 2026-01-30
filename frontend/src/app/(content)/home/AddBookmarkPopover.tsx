@@ -14,22 +14,44 @@ export default function AddBookmarkPopover() {
 
   const handleCreate = async () => {
     try {
-      const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/content/save/url`;
+      const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/content/save`;
       const token = fetchToken();
+
+      const trimmedLink = link.trim();
+      if (!trimmedLink) {
+        toast.error("Please enter a URL.");
+        return;
+      }
+
+      if (!token) {
+        toast.error("Please log in to save a bookmark.");
+        return;
+      }
+
       const res = await fetch(url, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         method: "POST",
-        body: JSON.stringify({ url: link }),
+        body: JSON.stringify({ url: trimmedLink, source: "web_app" }),
       });
-      const data = await res.json();
-      toast.success("bookmark saved");
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        const detail = data?.detail || "Failed to save bookmark.";
+        toast.error(detail);
+        return;
+      }
+
+      toast.success("Bookmark saved successfully!");
       console.log(data);
+      setLink("");
+      setOpen(false);
     } catch (err) {
       console.log("Error occurred in saving url: ", err);
-      toast.error("Something went wrong, please try again");
+      toast.error("An error occurred, please try again.");
     }
   };
 

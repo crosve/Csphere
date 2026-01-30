@@ -41,6 +41,23 @@ class ContentProcessor(BaseProcessor):
             self.db.add(new_content)
             self.db.flush()
 
+            utc_time = datetime.now(timezone.utc)
+
+            # Ensure the user-content relationship exists even if AI processing fails.
+            existing_item = self.db.query(ContentItem).filter(
+                ContentItem.user_id == user_id,
+                ContentItem.content_id == new_content.content_id
+            ).first()
+
+            if not existing_item:
+                new_item = ContentItem(
+                    user_id=user_id,
+                    content_id=new_content.content_id,
+                    saved_at=utc_time,
+                    notes=notes,
+                )
+                self.db.add(new_item)
+
             #update the content Embedding manager when necessary 
             content_manager = ContentEmbeddingManager(db=self.db, content_url=new_content.url)
 
@@ -64,69 +81,41 @@ class ContentProcessor(BaseProcessor):
             else:
                 logging.debug(f"Summary Generated: {content_ai.ai_summary}")
 
-                # Check if this user already saved this content
-                existing_item = self.db.query(ContentItem).filter(
-                    ContentItem.user_id == user_id,
-                    ContentItem.content_id == new_content.content_id
-                ).first()
+            # Add to the corresponding folder if any
+            if folder_id and folder_id != '' and folder_id != 'default':
+                new_folder_item = folder_item(
+                    folder_item_id=uuid4(),
+                    folder_id=folder_id,
+                    user_id=user_id,
+                    content_id=new_content.content_id,
+                    added_at=datetime.utcnow(),
+                )
 
+                self.db.add(new_folder_item)
+                self.db.commit()
+                self.db.refresh(new_folder_item)
+            else:
+                print("No valid folder id found, skipping this part")
 
-                utc_time = datetime.now(timezone.utc)
+            if tag_ids:
+                for tag_id in tag_ids:
+                    existing_tag_link = self.db.query(ContentTag).filter(
+                        ContentTag.c.tag_id == tag_id,
+                        ContentTag.c.content_id == new_content.content_id,
+                        ContentTag.c.user_id == user_id,
+                    ).first()
 
-                if not existing_item:
-                    new_item = ContentItem(
-                        user_id=user_id,
-                        content_id=new_content.content_id,
-                        saved_at=utc_time,
-                        notes=notes
-
-                    )
-                    self.db.add(new_item)
-                    self.db.commit()
-
-
-                    # Add to the corresponding folder if any
-                    if folder_id and folder_id != '' and folder_id != 'default':
-                        new_folder_item = folder_item(
-                            folder_item_id=uuid4(),
-                            folder_id=folder_id,
-                            user_id=user_id,
+                    if not existing_tag_link:
+                        stmt = ContentTag.insert().values(
+                            tag_id=tag_id,
                             content_id=new_content.content_id,
-                            added_at=datetime.utcnow()
+                            user_id=user_id,
                         )
+                        self.db.execute(stmt)
+                self.db.commit()
 
-                        self.db.add(new_folder_item)
-                        self.db.commit()
-                        self.db.refresh(new_folder_item)
-                    else:
-                        print("No valid folder id found, skipping this part")
-
-                    if tag_ids:
-                        for tag_id in tag_ids:
-                            # Use .c. before the column names
-                            existing_tag_link = self.db.query(ContentTag).filter(
-                                ContentTag.c.tag_id == tag_id,
-                                ContentTag.c.content_id == new_item.content_id,
-                                ContentTag.c.user_id == user_id
-                            ).first()
-
-                            if not existing_tag_link:
-                                # For Table objects, you must use a core insert statement 
-                                # OR make sure ContentTag is a Class.
-                                # If it's a Table, use this:
-                                stmt = ContentTag.insert().values(
-                                    tag_id=tag_id,
-                                    content_id=new_item.content_id,
-                                    user_id=user_id
-                                )
-                                self.db.execute(stmt)
-                        self.db.commit()
-                                
-
-                logging.info(f"Successfully saved content for user. Returning content id: {new_content.content_id}")
-
-
-                return new_content.content_id
+            logging.info(f"Successfully saved content for user. Returning content id: {new_content.content_id}")
+            return new_content.content_id
 
         except Exception as e:
             self.db.rollback()

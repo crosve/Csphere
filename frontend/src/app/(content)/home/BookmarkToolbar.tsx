@@ -84,9 +84,16 @@ export function BookmarkToolbar({
         {tabs.map((tab) => {
           let isActive = pathname === tab.href;
 
-          // if (pathname.includes("tag")) {
-          //   isActive = true;
-          // }
+          if (tab.href === "/home/tags" && pathname.startsWith("/home/tags")) {
+            isActive = true;
+          }
+
+          if (
+            tab.href === "/home/folders" &&
+            pathname.startsWith("/home/folders")
+          ) {
+            isActive = true;
+          }
 
           return (
             <Link

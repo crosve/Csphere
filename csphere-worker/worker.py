@@ -60,7 +60,7 @@ def handle_message(message : dict, pydantic_message : MessageSchema):
             print('here')
 
             #only process if there is no folder id
-            if content_id != '' and pydantic_message.folder_id in ['default',None, '']:
+            if content_id and pydantic_message.folder_id in ['default', None, '']:
                 logging.info('processing the content for folders')
                 bucketProcessor : BucketProcessor = get_processor('process_folder', db=db)
                 bucketProcessor.process(message=message, content_id=content_id)

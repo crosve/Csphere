@@ -17,7 +17,7 @@ function TagSelectionTab({
   return (
     <div
       className={cn(
-        "w-full flex flex-row space-x-6 items-start h-auto p-2 rounded-2xl bg-gray-300 shadow-sm mb-4",
+        "w-full flex flex-row space-x-3 items-start h-auto p-2 rounded-2xl bg-transparent border border-black shadow-sm mb-4",
       )}
     >
       {selectionItems.map((item, index) => {
@@ -29,8 +29,10 @@ function TagSelectionTab({
               handleSelectedAction(item);
             }}
             className={cn(
-              "hover:bg-gray-200",
-              selectedAction == item && "bg-gray-400",
+              "border border-black rounded-lg px-4",
+              selectedAction == item
+                ? "bg-[#202A29] text-white hover:bg-[#202A29]"
+                : "bg-transparent text-[#202A29] hover:bg-gray-100",
             )}
           >
             {item}

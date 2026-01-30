@@ -7,22 +7,13 @@
   "permissions": [
     "tabs",
     "identity",
-    "storage",
-    "activeTab",
-    "scripting",
-    "bookmarks"
+    "storage"
   ],
   "icons": {
     "16": "images/Csphere-icon-16.png",
     "48": "images/Csphere-icon-48.png",
     "128": "images/Csphere-icon-128.png"
   },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["utils.js", "content.js"]
-    }
-  ],
   "background": {
     "service_worker": "background.js"
   },

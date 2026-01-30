@@ -16,11 +16,11 @@ class ContentCreatTags(BaseModel):
 
 class ContentCreate(BaseModel):
     url: str
-    title: Optional[str]
-    tags: Optional[list[ContentCreatTags]]
-    notes: Optional[str]
+    title: Optional[str] = None
+    source: str
+    tags: Optional[list[ContentCreatTags]] = None
+    notes: Optional[str] = None
     folder_id: Optional[UUID] = None
-    html: str
 
 class TabRemover(BaseModel):
     content_id: UUID 

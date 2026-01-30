@@ -1,17 +1,6 @@
-importScripts("utils.js");
-
-console.log("Background script loaded and running...");
-browser.runtime.onInstalled.addListener(() => {
-  console.log("Extension installed and background script running...");
-});
-
-// For firefox MV2: browser.browserAction
-// For chrome/edge/opera: browser.action
-
-const clickAction = browser.action || browser.browserAction;
-
-clickAction.onClicked.addListener(async (tab) => {
-  utils.executeContentScript(tab.id, "content.js");
+console.log("Background service worker loaded...");
+chrome.runtime.onInstalled.addListener(() => {
+  console.log("Extension installed (MV3 service worker)");
 });
 
 // chrome.action.onClicked.addListener((tab) => {

@@ -149,51 +149,30 @@ def get_content_from_html(content_id: str, user_id: UUID = Depends(get_current_u
 @router.post("/save")
 def save_content(content: ContentCreate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     try:
-        _enqueue_new_content(
-                url=content.url,
-                title=content.title,
-                source="chrome_extension",
-                html=content.html,
-                user_id=user.id,
-                notes=content.notes,
-                tags=content.tags,
-                folder_id=content.folder_id,
-            )
+        safe_url = ensure_safe_url(content.url)
 
-        return {"status": "Success", 'message': 'Bookmark details sent to message queue'}
+        _enqueue_new_content(
+            url=safe_url,
+            title=content.title,
+            source=content.source,
+            user_id=user.id,
+            notes=content.notes,
+            tags=content.tags,
+            folder_id=content.folder_id,
+        )
+
+        return {"status": "Success", "message": "Bookmark details sent to message queue"}
+
+    except HTTPException:
+        raise
 
     except Exception as e:
         logger.error(f"Error occurred in saving the bookmark: {str(e)}", exc_info=True)
-        return {'status': "unsuccessful", 'error': "Failed to save bookmark from chrome extension"}
-
-
-@router.post("/save/url")
-def save_content_by_url(content: ContentSavedByUrl, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    try:
-        safe_url = ensure_safe_url(content.url)
-
-        html = ''
-
-        title =safe_url    
-        logger.info(f"safe url being set: {safe_url}")
-
-        _enqueue_new_content(
-            url=str(safe_url) if safe_url else content.url,
-            title=content.url, 
-            source="web_app",
-            html=None,
-            user_id=user.id,
-            notes=None,
-            tags=None,
-            folder_id="default",
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to save bookmark",
         )
-        return {'status': "Success", 'message': 'Bookmark details sent to message queue'}
-    
-    except Exception as e:
-        logger.error(f"Error occurred in saving the url: {str(e)}", exc_info=True)
-        return {'status': "unsuccessful", 'error': "Failed to save bookmark from the provided url"}    
 
-    
 
 @router.get("/unread/count", status_code=status.HTTP_200_OK)
 def get_unread_count(user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):

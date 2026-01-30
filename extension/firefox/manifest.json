@@ -8,8 +8,7 @@
     "tabs",
     "identity",
     "storage",
-    "activeTab",
-    "https://csphere.feeltiptop.com/"
+    "https://csphere.feeltiptop.com/*"
   ],
 
   "icons": {
@@ -26,13 +25,6 @@
     "default_popup": "popup.html",
     "default_icon": "images/Csphere-icon-128.png"
   },
-
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["utils.js", "content.js"]
-    }
-  ],
 
   "homepage_url": "https://csphere.io",
 

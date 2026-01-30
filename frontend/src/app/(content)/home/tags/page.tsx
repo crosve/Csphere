@@ -230,7 +230,7 @@ function Page() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-12">
           <div>
             <h1 className="text-2xl font-bold tracking-tight uppercase">
-              Your Tags ({usersTags.length})
+              Tags ({usersTags.length})
             </h1>
             <div className="h-1 w-12 bg-gray-900 mt-1"></div>
           </div>
@@ -246,7 +246,7 @@ function Page() {
             </button>
             <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
-                <button className="rounded-md bg-gray-900 px-4 py-1.5 text-sm font-medium text-gray-100 hover:bg-gray-800 transition-colors cursor-pointer">
+                <button className="bg-[#202A29] hover:bg-[#435856] text-white px-4 py-1.5 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors cursor-pointer">
                   Create Tag
                 </button>
               </PopoverTrigger>
@@ -272,7 +272,7 @@ function Page() {
                       Cancel
                     </button>
                     <button
-                      className="rounded-lg px-3 py-1.5 bg-gray-800 text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                      className="rounded-lg px-3 py-1.5 bg-[#202A29] text-white hover:bg-[#435856] text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
                       onClick={createTag}
                     >
                       Create

@@ -53,13 +53,16 @@ function page() {
 
   return (
     <>
-      {Object.entries(monthBookmarks).map(([month, bookmarks]) => (
-        // Use a Fragment or a div with a key when mapping
-        <div key={month} className="mb-10">
-          <h2 className="text-lg font-semibold">{month}</h2>
-          <BookmarkList items={bookmarks} />
-        </div>
-      ))}
+      {Object.entries(monthBookmarks)
+        .filter(([, bookmarks]) => Array.isArray(bookmarks) && bookmarks.length > 0)
+        .map(([month, bookmarks]) => (
+          <div key={month} className="mb-14">
+            <h2 className="text-lg font-semibold mb-6">{month}</h2>
+            <div className="mt-2">
+              <BookmarkList items={bookmarks} />
+            </div>
+          </div>
+        ))}
     </>
   );
 }

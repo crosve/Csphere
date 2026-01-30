@@ -37,11 +37,11 @@ export const shareTo = {
   gmail: async (bookmarkUrl: string): ShareResult => {
     window.open(
       `https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent(
-        "Check out this bookmark from CSphere!"
+        "Check out this bookmark from Csphere!"
       )}&body=${encodeURIComponent(
-        "I bookmarked this on CSphere: " +
+        "I bookmarked this on Csphere: " +
           bookmarkUrl +
-          "\n\nStart bookmarking on CSphere: https://csphere.io/"
+          "\n\nStart bookmarking on Csphere: https://csphere.io/"
       )}`,
       "_blank"
     );
@@ -49,13 +49,13 @@ export const shareTo = {
   },
   messages: async (bookmarkUrl: string): ShareResult => {
     navigator.clipboard
-      .writeText("I bookmarked this on CSphere: " + bookmarkUrl) // permission asked for seeing copies of images/text
+      .writeText("I bookmarked this on Csphere: " + bookmarkUrl) // permission asked for seeing copies of images/text
       .then(() =>
         alert("Message copied! Please paste it into your messaging app.")
       )
       .catch(() => {
         const textArea = document.createElement("textarea");
-        textArea.value = "I bookmarked this on CSphere: " + bookmarkUrl;
+        textArea.value = "I bookmarked this on Csphere: " + bookmarkUrl;
         document.body.appendChild(textArea);
         textArea.select();
         document.execCommand("copy");

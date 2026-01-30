@@ -128,7 +128,7 @@ export default function BookmarkCard({ bookmark }: BookmarkCardProps) {
         return;
       }
       const data = await response.json();
-      toast.message("Tab unsaved");
+      toast.message("Tab removed");
     } catch (error) {
       console.log("Error: ", error);
       toast.error("Error untabing your tab");
