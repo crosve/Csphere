@@ -15,6 +15,8 @@ import boto3
 import logging
 import os
 
+from app.embeddings.embedding_manager import ContentEmbeddingManager
+
 logger = logging.getLogger(__name__)
 
 
@@ -45,6 +47,9 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     if existing_user:
         logger.error(f"Username {user.username} already exists")
         raise HTTPException(status_code=400, detail="Username already registered")
+
+
+    embedder = ContentEmbeddingManager(db=db)
     
     #Insert user into the database
     new_user = User(
@@ -53,6 +58,8 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
         email=user.email,
         password=user.password,
         created_at=datetime.utcnow() if not user.created_at else user.created_at,
+        user_embedding=embedder._generate_embedding(text=f'initial embedding for user {user.username}'),
+        last_embedding_update = datetime.utcnow() if not user.created_at else user.created_at
     )
     db.add(new_user)
     db.commit()

@@ -622,8 +622,9 @@ def get_discover_content_service(user_id: str, db: Session):
             .filter(ContentItem.user_id == user_id)
             .filter(ContentItem.saved_at >= start_date)
             .filter(ContentItem.saved_at < end_date)
+            .filter(ContentItem.read == False)
             .order_by(ContentAI.embedding.cosine_distance(user_embedding))
-            .limit(4)
+            .limit(5)
             .all()
         )
 
