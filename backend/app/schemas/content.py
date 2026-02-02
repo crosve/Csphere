@@ -43,7 +43,7 @@ class ContentWithSummary(BaseModel):
         from_attributes = True
 
 class ContentSavedByUrl(BaseModel):
-    url: HttpUrl
+    url: str
 
 class CategoryOut(BaseModel):
     category_id: UUID

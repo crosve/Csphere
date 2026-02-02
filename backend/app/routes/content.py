@@ -40,7 +40,8 @@ from app.services.content_services import (
     delete_content, 
     get_recent_saved_content, 
     import_browser_bookmarks_service,
-    _enqueue_new_content
+    _enqueue_new_content,
+    get_discover_content_service
 )
 
 # 7. Exceptions
@@ -70,6 +71,7 @@ def search(query: str, user: User = Depends(get_current_user), db: Session = Dep
         return response_json
 
     except EmbeddingManagerNotFound:
+        logging.error("Embedding manager not found ")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="AI search engine is currently offline or broken"
@@ -88,6 +90,15 @@ def search(query: str, user: User = Depends(get_current_user), db: Session = Dep
         )
   
 
+
+@router.get("/rediscover", status_code=200)
+def get_discover_content(user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
+    print('here')
+    try:
+        return get_discover_content_service(user_id=user_id, db=db)
+
+    except Exception as e:
+        logging.error(f"An error occured trying to fetch the users content: {e}")
 
 @router.post("/save")
 def save_content(content: ContentCreate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -121,12 +132,13 @@ def save_content_by_url(content: ContentSavedByUrl, user: User = Depends(get_cur
         logger.info(f"safe url being set: {safe_url}")
 
         _enqueue_new_content(
-            url=safe_url if safe_url else content.url,
+            url=str(safe_url) if safe_url else content.url,
             title=content.url, 
             source="web_app",
             html=None,
             user_id=user.id,
             notes=None,
+            tags=None,
             folder_id="default",
         )
         return {'status': "Success", 'message': 'Bookmark details sent to message queue'}
@@ -347,4 +359,6 @@ def import_browser_bookmarks(bookmark_data : BookmarkImportRequest, user_id: UUI
             detail="Failed to save the browser data, try again"
         )
 
-    
+
+
+

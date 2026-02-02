@@ -31,6 +31,8 @@ from app.exceptions.content_exceptions import EmbeddingManagerNotFound, NoMatche
 
 import logging
 
+
+from dateutil.relativedelta import relativedelta
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
@@ -596,3 +598,45 @@ def import_browser_bookmarks_service(bookmark_data: BookmarkImportRequest, user_
     # Now you can proceed to save bookmarks_list to your DB
     return {'status' : 'success', 'message' : 'All bookmarks have been pushed'}
 
+
+def get_discover_content_service(user_id: str, db: Session):
+    user = db.query(User).filter(User.id == user_id).first()
+
+    if not user:
+        return [] # Or raise an HTTPException
+
+    user_embedding = user.user_embedding
+    discovered_content = []
+
+    # Iterate through the last 6 months
+    for i in range(6):
+        start_date = (datetime.now() - relativedelta(months=i)).replace(day=1, hour=0, minute=0, second=0)
+        end_date = start_date + relativedelta(months=1)
+
+        # Query for top 4 similar items in this specific month
+        # Using pgvector operator <=> for cosine similarity
+        month_items = (
+            db.query(ContentItem, Content, ContentAI, )
+            .join(Content, Content.content_id == ContentItem.content_id)
+            .join(ContentAI, Content.content_id == ContentAI.content_id)
+            .filter(ContentItem.user_id == user_id)
+            .filter(ContentItem.saved_at >= start_date)
+            .filter(ContentItem.saved_at < end_date)
+            .order_by(ContentAI.embedding.cosine_distance(user_embedding))
+            .limit(4)
+            .all()
+        )
+
+
+        for content_item, content, ai in month_items:
+            discovered_content.append(ContentWithSummary(
+                content_id=content.content_id,
+                title=content.title,
+                url=content.url,
+                source=content.source,
+                first_saved_at=content_item.saved_at,
+                ai_summary=ai.ai_summary,
+                folder=''
+            ))
+
+    return discovered_content
