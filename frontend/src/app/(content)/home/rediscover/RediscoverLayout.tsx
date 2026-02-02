@@ -1,5 +1,4 @@
 "use client";
-
 import { ReactNode, useState, useEffect, createContext } from "react";
 import { Tabs } from "@/components/ui/tabs";
 import { fetchToken } from "@/functions/user/UserData";
@@ -11,15 +10,15 @@ type Props = {
 interface MetaDataProps {
   unreadCount: number;
 }
+
 export const LayoutContext = createContext<ViewMode>("grid");
 
-export default function FolderLayout({ children }: Props) {
+function RediscoverLayout({ children }: Props) {
   const [activeTab, setActiveTab] = useState("latest");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [metaData, setMetaData] = useState<MetaDataProps>({
     unreadCount: 0,
   });
-  console.log("active tab in bookmark layout: ", activeTab);
 
   useEffect(() => {
     const FetchMetaData = async () => {
@@ -33,9 +32,7 @@ export default function FolderLayout({ children }: Props) {
           method: "GET",
         });
         const data = await res.json();
-        console.log("DATA BEING returned: ", data);
         if (data.status === "succesful") {
-          console.log("medata dat count: ", data.total_count);
           setMetaData((prev) => ({
             ...prev,
             unreadCount: data.total_count,
@@ -69,3 +66,5 @@ export default function FolderLayout({ children }: Props) {
     </div>
   );
 }
+
+export default RediscoverLayout;

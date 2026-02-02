@@ -1,8 +1,8 @@
 :root {
-  --primary: #2e3635;
+  --primary: #202726;
   --primary-hover: #304b48;
   --primary-light: #4e5f5d;
-  --primary-transparent: rgba(99, 102, 241, 0.1);
+  --primary-transparent: rgba(51, 92, 73, 0.1);
   --bg-color: #f9fafb;
   --text-color: #111827;
   --secondary-text: #6b7280;
@@ -401,7 +401,7 @@ body {
 
 .primary-button:disabled {
   background-color: #ccc;
-  color: #666;
+  color: #666666;
   cursor: not-allowed;
   opacity: 0.6;
 }
@@ -576,7 +576,7 @@ body {
 .back-btn {
   background: none;
   border: none;
-  color: #4A90E2;
+  color: #577062;
   cursor: pointer;
   padding: 5px 0;
   font-weight: 500;
@@ -750,3 +750,81 @@ body {
   margin-top: 4px;
 }
 
+
+
+.status-message{
+  text-align: center;
+  margin: 2px;
+}
+
+
+.settings-container {
+  position: relative;
+  display: inline-block;
+}
+
+.settings-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 1000;
+  min-width: 150px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.dropdown-item {
+  padding: 10px 15px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.dropdown-item:hover {
+  background: #f5f5f5;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: #eee;
+}
+
+.dropdown-logout {
+  width: 100%;
+  text-align: left;
+  padding: 10px 15px;
+  border: none;
+  background: none;
+  color: #ff4d4d;
+  cursor: pointer;
+}
+
+.dropdown-logout:hover {
+  background: #fff5f5;
+}
+
+.icon-btn {
+  background-color: #ffffff; /* Sets background to white */
+  border: none;              /* Removes the default button border */
+  border-radius: 50%;        /* Makes the hit area circular */
+  cursor: pointer;           /* Shows the hand pointer */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;              /* Space around the SVG */
+  transition: background-color 0.2s ease; /* Smooth hover effect */
+  outline: none;             /* Removes the blue ring on click */
+}
+
+.bookmark-summary-box{
+  margin: 4px;
+
+  padding: 2px;
+  text-align: left;
+  text-wrap:initial;
+
+
+}

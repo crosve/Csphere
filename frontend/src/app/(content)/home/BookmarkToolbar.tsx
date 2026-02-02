@@ -1,6 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import { Grid3X3, List, Folder, Clock, BookOpen } from "lucide-react";
+import { Grid3X3, List } from "lucide-react";
 import { TabsList } from "@/components/ui/tabs";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -15,16 +15,23 @@ type BookmarkToolbarProps = {
   unreadCount: number;
 };
 
-export function BookmarkToolbar({ viewMode, onViewModeChange, unreadCount }: BookmarkToolbarProps) {
+export function BookmarkToolbar({
+  viewMode,
+  onViewModeChange,
+  unreadCount,
+}: BookmarkToolbarProps) {
   const pathname = usePathname();
 
   return (
     <div className="flex flex-col space-y-6">
-      
       <div className="flex items-center justify-between mt-4 mb-4">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Your Bookmarks</h2>
-          <p className="text-gray-600">Organize and rediscover your saved content</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            Your Bookmarks
+          </h2>
+          <p className="text-gray-600">
+            Organize and rediscover your saved content
+          </p>
         </div>
         <div className="flex items-center space-x-3">
           <AddBookmarkPopover />
@@ -58,11 +65,13 @@ export function BookmarkToolbar({ viewMode, onViewModeChange, unreadCount }: Boo
         </div>
       </div>
 
-      <TabsList className="grid w-full max-w-2xl grid-cols-4 p-0 mb-2 border rounded-lg bg-transparent border-black">
+      <TabsList className="grid w-auto max-w-4xl grid-cols-5 p-0 mb-2 border rounded-lg bg-transparent border-black">
         <Link
           href="/home"
           className={`flex items-center h-full justify-center space-x-2 rounded-l-lg border-r border-gray-700 transition-colors ${
-            pathname === "/home" ? "bg-[#202A29] text-white" : "bg-transparent text-[#202A29] hover:bg-gray-100"
+            pathname === "/home"
+              ? "bg-[#202A29] text-white"
+              : "bg-transparent text-[#202A29] hover:bg-gray-100"
           }`}
         >
           <span>Latest</span>
@@ -71,7 +80,9 @@ export function BookmarkToolbar({ viewMode, onViewModeChange, unreadCount }: Boo
         <Link
           href="/home/unread"
           className={`flex items-center h-full justify-center space-x-2 border-r border-gray-700 transition-colors ${
-            pathname === "/home/unread" ? "bg-[#202A29] text-white" : "bg-transparent text-[#202A29] hover:bg-gray-100"
+            pathname === "/home/unread"
+              ? "bg-[#202A29] text-white"
+              : "bg-transparent text-[#202A29] hover:bg-gray-100"
           }`}
         >
           <span>Unread</span>
@@ -79,11 +90,26 @@ export function BookmarkToolbar({ viewMode, onViewModeChange, unreadCount }: Boo
             {unreadCount}
           </Badge>
         </Link>
+        <Link
+          href="/home/rediscover"
+          className={`flex items-center h-full justify-center space-x-2 border-r border-gray-700 transition-colors ${
+            pathname === "/home/rediscover"
+              ? "bg-[#202A29] text-white"
+              : "bg-transparent text-[#202A29] hover:bg-gray-100"
+          }`}
+        >
+          <span>Rediscover</span>
+          {/* <Badge variant="secondary" className="ml-1 bg-[#202A29] text-white">
+            New
+          </Badge> */}
+        </Link>
 
         <Link
           href="/home/tags"
           className={`flex items-center h-full justify-center space-x-2 border-r border-gray-700 transition-colors ${
-            pathname === "/home/tags" ? "bg-[#202A29] text-white" : "bg-transparent text-[#202A29] hover:bg-gray-100"
+            pathname === "/home/tags"
+              ? "bg-[#202A29] text-white"
+              : "bg-transparent text-[#202A29] hover:bg-gray-100"
           }`}
         >
           <span>Tags</span>
@@ -92,7 +118,9 @@ export function BookmarkToolbar({ viewMode, onViewModeChange, unreadCount }: Boo
         <Link
           href="/home/folders"
           className={`flex items-center h-full justify-center space-x-2 rounded-r-lg border-gray-700 transition-colors ${
-            pathname === "/home/folders" ? "bg-[#202A29] text-white" : "bg-transparent text-[#202A29] hover:bg-gray-100"
+            pathname === "/home/folders"
+              ? "bg-[#202A29] text-white"
+              : "bg-transparent text-[#202A29] hover:bg-gray-100"
           }`}
         >
           <span>Folders</span>

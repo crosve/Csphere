@@ -35,7 +35,7 @@ class BucketProcessor(BaseProcessor):
         try:
             # 1. Data Extraction & State Setup
             # We capture user_id to scope the Vector Search later
-            user_id, notes, folder_id, raw_html, content_data = self.extract_data(message=message)
+            user_id, notes, folder_id, raw_html, content_data, _ = self.extract_data(message=message)
             self.user_id = user_id
 
             # 2. Embedding Retrieval

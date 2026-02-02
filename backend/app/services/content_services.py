@@ -4,7 +4,7 @@ from app.data_models.content_item import ContentItem
 from app.data_models.content_ai import ContentAI
 from app.data_models.folder_item import folder_item
 from app.data_models.folder import Folder
-from app.schemas.content import ContentWithSummary, UserSavedContent, TabRemover, NoteContentUpdate, CategoryOut
+from app.schemas.content import ContentWithSummary, UserSavedContent, TabRemover, NoteContentUpdate, CategoryOut, BookmarkImportRequest
 from app.preprocessing.query_preprocessor import QueryPreprocessor
 from app.deps.services import get_embedding_manager
 from app.data_models.user import User
@@ -31,6 +31,8 @@ from app.exceptions.content_exceptions import EmbeddingManagerNotFound, NoMatche
 
 import logging
 
+
+from dateutil.relativedelta import relativedelta
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
@@ -133,6 +135,7 @@ def _enqueue_new_content(
     }
     message = json.dumps(payload)
     result = push_to_activemq(message=message)
+    
     if not result:
         raise HTTPException(status_code=503, detail="Failed to push to ActiveMQ")
     
@@ -523,4 +526,115 @@ def get_recent_saved_content(user_id : UUID, db : Session) -> list[ContentWithSu
 
     return response
 
+
+
+def webkit_to_iso(webkit_timestamp):
+    if not webkit_timestamp:
+        return None
+
+    if webkit_timestamp > 1e15: 
+        # Microseconds
+        seconds = webkit_timestamp / 1_000_000
+    else:
+        # Milliseconds
+        seconds = webkit_timestamp / 1_000
+
+    # Apply the offset between 1601 and 1970
+    unix_time = seconds - 11644473600
     
+    return datetime.fromtimestamp(unix_time, tz=timezone.utc).isoformat()
+    
+
+def import_browser_bookmarks_service(bookmark_data: BookmarkImportRequest, user_id: UUID, db: Session):
+    bookmarks_list = []
+
+    def collect_bookmarks(node, folder_path="Root"):
+
+        if node.children is not None:
+            new_path = f"{folder_path} > {node.title}"
+            for child in node.children:
+                collect_bookmarks(child, new_path)
+        
+        elif node.url:
+            if node.url.startswith('https'):
+                bookmarks_list.append({                    
+                    'url': node.url,
+                    'title': node.title,
+                    'source': 'browser import', 
+                    'first_saved_at': webkit_to_iso(node.dateAdded)
+                })
+
+
+    for root_node in bookmark_data.bookmarks:
+        collect_bookmarks(root_node)
+
+    print(f"Successfully collected {len(bookmarks_list)} bookmarks")
+
+    for bookmark in bookmarks_list:
+        payload = {
+            "content_payload":bookmark,
+            "raw_html": '',
+            "user_id" : str(user_id),
+            "notes" : '',
+            'folder_id': '', 
+            'tags_ids' : []
+
+        }
+
+
+        message = json.dumps(payload)
+        result = push_to_activemq(message=message)
+        if result:
+            continue 
+        else:
+            logging.error('Failed to push to active mq')
+            
+
+
+    
+    # Now you can proceed to save bookmarks_list to your DB
+    return {'status' : 'success', 'message' : 'All bookmarks have been pushed'}
+
+
+def get_discover_content_service(user_id: str, db: Session):
+    user = db.query(User).filter(User.id == user_id).first()
+
+    if not user:
+        return [] # Or raise an HTTPException
+
+    user_embedding = user.user_embedding
+    discovered_content = []
+
+    # Iterate through the last 6 months
+    for i in range(6):
+        start_date = (datetime.now() - relativedelta(months=i)).replace(day=1, hour=0, minute=0, second=0)
+        end_date = start_date + relativedelta(months=1)
+
+        # Query for top 4 similar items in this specific month
+        # Using pgvector operator <=> for cosine similarity
+        month_items = (
+            db.query(ContentItem, Content, ContentAI, )
+            .join(Content, Content.content_id == ContentItem.content_id)
+            .join(ContentAI, Content.content_id == ContentAI.content_id)
+            .filter(ContentItem.user_id == user_id)
+            .filter(ContentItem.saved_at >= start_date)
+            .filter(ContentItem.saved_at < end_date)
+            .filter(ContentItem.read == False)
+            .order_by(ContentAI.embedding.cosine_distance(user_embedding))
+            .limit(5)
+            .all()
+        )
+
+
+        for content_item, content, ai in month_items:
+            discovered_content.append(ContentWithSummary(
+                content_id=content.content_id,
+                title=content.title,
+                url=content.url,
+                source=content.source,
+                first_saved_at=content_item.saved_at,
+                ai_summary=ai.ai_summary,
+                folder=''
+            ))
+
+    return discovered_content
