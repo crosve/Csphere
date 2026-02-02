@@ -35,4 +35,4 @@ def get_db():
     finally:
         db.close()
 
-from data_models import content, content_ai, content_item, user, folder, folder_item
+from data_models import content, content_ai, content_item, user, folder, folder_item, content_tag, tag, content_category

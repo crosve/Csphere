@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from pgvector.sqlalchemy import Vector
-from app.db.database import Base
+from database.database import Base
 
 
 class ContentAI(Base):

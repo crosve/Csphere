@@ -4,7 +4,7 @@ from sqlalchemy import Column, ForeignKey, Table, ForeignKeyConstraint
 from sqlalchemy.dialects.postgresql import UUID
 
 
-from app.db.database import Base
+from database.database import Base
 
 
 

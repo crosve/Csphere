@@ -3,7 +3,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, Mapped
 from pgvector.sqlalchemy import Vector
 
-from app.db.database import Base
+from database.database import Base
 import uuid
 
 class User(Base):

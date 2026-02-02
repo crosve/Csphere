@@ -3,11 +3,11 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
-from app.data_models.content_category import ContentCategory
+from data_models.content_category import ContentCategory
 # from app.data_models.content import Content
 
 
-from app.db.database import Base
+from database.database import Base
 import uuid
 
 

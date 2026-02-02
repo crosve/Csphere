@@ -2,8 +2,8 @@ from sqlalchemy import Column, ForeignKey, TIMESTAMP, String, Boolean, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from app.db.database import Base
-from app.data_models.content_tag import ContentTag
+from database.database import Base
+from data_models.content_tag import ContentTag
 
 
 class ContentItem(Base):

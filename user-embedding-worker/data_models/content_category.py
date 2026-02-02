@@ -3,7 +3,7 @@ from sqlalchemy import Column, ForeignKey, Table
 from sqlalchemy.dialects.postgresql import UUID
 
 
-from app.db.database import Base
+from database.database import Base
 
 
 

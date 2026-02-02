@@ -1,13 +1,15 @@
 import logging
 from uuid import uuid4
-import re
 import numpy as np
 from datetime import datetime, timezone
-from typing import List, Tuple, Optional
+from typing import Optional
 
+#class imports
+from classes.EmbeddingManager import ContentEmbeddingManager
 
 #Data module imports
 import numpy as np
+import traceback
 
 #Data models import
 from data_models.user import User
@@ -36,11 +38,13 @@ from processors.base_processor import BaseProcessor
 class UserEmbeddingProcessor(BaseProcessor):
     def __init__(self, db: Session):
         super().__init__(db=db)
+        self.content_embedding_manager = ContentEmbeddingManager(db=db)
 
-    def process_users_embeddings(self):
+    def process_users_embeddings(self) -> int:
         '''
         Processes all users embeddings model based on the 
         previous date time
+        Returns number of users processed
         '''
         db = self.db
         user_data: list[UserEmbeddingData] = self.get_users()
@@ -55,8 +59,9 @@ class UserEmbeddingProcessor(BaseProcessor):
             )
 
             if not content_embeddings_data:
-                logging.info(f"No new embeddings found for user {user_id}")
+                logging.info(f"No new embeddings found for user {user_id}. ")
                 continue
+            logging.info(f"New embeddings found for user {user_id}")
 
             new_user_embedding = self.calculate_centroid(
                 user_dto.user_embedding, 
@@ -73,8 +78,9 @@ class UserEmbeddingProcessor(BaseProcessor):
             except Exception as e:
                 db.rollback()
                 logging.error(f"Failed to update user {user_id}: {e}")
+        return len(user_data)
 
-    def get_users_bookmarks(self, user_id: str, timestamp: Optional[datetime]):
+    def get_users_bookmarks(self, user_id: uuid4, timestamp: Optional[datetime]):
         db = self.db
         
         if timestamp is None:
@@ -113,6 +119,51 @@ class UserEmbeddingProcessor(BaseProcessor):
         merged_embedding = (existing_vec * (1 - alpha)) + (new_mean * alpha)
         
         return merged_embedding.tolist()
+    
+    def get_users(self) -> list[UserEmbeddingData]:
+
+    # user_id: str
+    # user_embedding: list[float]
+    # last_update: datetime
+        db = self.db 
+
+
+        users : list[User] = db.query(User).all()
+
+        if not users:
+            logging.warning("No users were found in the database")
+            return 
+        
+        res = []
+
+        for user in users:
+            # Use keyword arguments (field_name=value)
+            if user.user_embedding is None:
+                #should add the user embedding to the DB 
+                logging.info(f"User {user.id} does not have an embedding!")
+                temp_user_embedding = self.create_user_embedding()
+                user.user_embedding = temp_user_embedding
+            res.append(UserEmbeddingData(
+                user_id=user.id, 
+                user_embedding=user.user_embedding if user.user_embedding is not None else [],
+                last_update=user.last_embedding_update
+            ))
+
+        return res
+    
+    def create_user_embedding(self):
+        try:
+            embedder = ContentEmbeddingManager(db=self.db)
+            user_embedding = embedder._generate_embedding('Initial user embedding')
+            return user_embedding
+
+        except Exception as e:
+            logging.exception(f"Failed to create user embedding: {e}")
+
+
+
+
+
 
         
         
