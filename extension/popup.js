@@ -205,6 +205,7 @@ function attachEventListeners() {
     .getElementById("dropdown-item-sync-bookmark")
     ?.addEventListener("click", async () => {
       await syncAllBrowserBookmarks();
+      showStatus("Imported succesfully", "success");
     });
 
   document.getElementById("logoutBtn")?.addEventListener("click", () => {
@@ -435,7 +436,7 @@ function renderFoldersList() {
         id: card.dataset.id,
         name: card.dataset.name,
       };
-      renderFoldersList(); // Re-render to show detail view
+      renderFoldersList();
     });
   });
 }
@@ -453,6 +454,7 @@ async function renderFolderDetailView(container) {
         <button id="backToFolders" class="back-btn">← Back</button>
         <h3>${selectedViewFolder.name}</h3>
       </div>
+      
         <h1>No bookmarks found for this folder</h1>
     </div>
   `;
@@ -478,6 +480,11 @@ async function renderFolderDetailView(container) {
         <div class="bookmark-header">
           <h4 class="bookmark-title">${b.title || "Untitled"}</h4>
           <span class="bookmark-date">${new Date(b.created_at || b.first_saved_at).toLocaleDateString()}</span>
+        </div>
+               <div class="bookmark-summary-box">
+          <p>${b.ai_summary || ""}</p>
+        
+
         </div>
         <a href="${b.url}" target="_blank" class="bookmark-url">visit</a>
         <div class="bookmark-tags">
@@ -522,6 +529,11 @@ async function renderRecentBookmarks() {
         <div class="bookmark-header">
           <h4 class="bookmark-title">${b.title || "Untitled"}</h4>
           <span class="bookmark-date">${new Date(b.created_at || b.first_saved_at).toLocaleDateString()}</span>
+        </div>
+        <div class="bookmark-summary-box">
+          <p>${b.ai_summary || ""}</p>
+        
+
         </div>
         <a href="${b.url}" target="_blank" class="bookmark-url">visit</a>
         <div class="bookmark-tags">
@@ -598,6 +610,7 @@ function renderTags() {
   });
 }
 
+//here
 function showStatus(msg, type) {
   const el = document.querySelector(".status-message");
   if (!el) return;

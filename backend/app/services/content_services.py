@@ -531,10 +531,7 @@ def get_recent_saved_content(user_id : UUID, db : Session) -> list[ContentWithSu
 def webkit_to_iso(webkit_timestamp):
     if not webkit_timestamp:
         return None
-    
-    # Chrome timestamps are often in microseconds (16 digits) 
-    # or milliseconds (13 digits). We need seconds.
-    # 13 digits = milliseconds
+
     if webkit_timestamp > 1e15: 
         # Microseconds
         seconds = webkit_timestamp / 1_000_000

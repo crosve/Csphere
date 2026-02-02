@@ -754,6 +754,7 @@ body {
 
 .status-message{
   text-align: center;
+  margin: 2px;
 }
 
 
@@ -816,4 +817,14 @@ body {
   padding: 8px;              /* Space around the SVG */
   transition: background-color 0.2s ease; /* Smooth hover effect */
   outline: none;             /* Removes the blue ring on click */
+}
+
+.bookmark-summary-box{
+  margin: 4px;
+
+  padding: 2px;
+  text-align: left;
+  text-wrap:initial;
+
+
 }
