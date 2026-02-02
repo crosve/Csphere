@@ -99,9 +99,9 @@ export function BookmarkToolbar({
           }`}
         >
           <span>Rediscover</span>
-          <Badge variant="secondary" className="ml-1 bg-[#202A29] text-white">
+          {/* <Badge variant="secondary" className="ml-1 bg-[#202A29] text-white">
             New
-          </Badge>
+          </Badge> */}
         </Link>
 
         <Link
