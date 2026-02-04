@@ -75,12 +75,14 @@ class ContentEmbeddingManager:
         try:
             if self._content_ai_exists(content.content_id):
                 return None
+            
+            print("Content data being processed: ", content)
 
             # Enrich the content by parsing the raw_html. If getting the html fails, default the summary_input to title
             #add in raw html to the enrich content function 
             summary_input, content_title = self._enrich_content(content.url, content.content_id, self.db, raw_html)
             if not summary_input:
-                summary_input = content_title or "No title avaliable"
+                summary_input = content.url or "No title avaliable"
 
 
             # Use LLM to summarize the content
@@ -197,11 +199,17 @@ class ContentEmbeddingManager:
         try:
            
             # print("extracting raw html from : ", raw_html[:20])
+
             metadata = self._extract_metadata_and_body(raw_html)
             metadata["body_text"] = self._clean_text(metadata["body_text"])
 
-            summary_input = self._build_summary_input(metadata)
-            return summary_input, metadata["title"]   
+            summary_input = ''
+            if not metadata or metadata == '':
+                #build the data with just the title 
+                summary_input = self._build_summary_input(url)
+            else:
+                summary_input = self._build_summary_input(metadata)
+            return summary_input, (metadata["title"] if metadata else url)
 
         except Exception as e:
             print(f"Error enriching content from {url}: {e}")

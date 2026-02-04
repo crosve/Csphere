@@ -46,9 +46,14 @@ class ContentProcessor(BaseProcessor):
 
             raw_html = message.get('raw_html', '')
 
-            if raw_html == '':
+            if not raw_html or raw_html == '':
                 logging.info("No raw html provided, categorization and summarization may be poor")
                 raw_html = self.get_html_content(url=content_url)
+
+                #confirm the raw html was fetched
+
+                if not raw_html or raw_html == '':
+                    logging.warning(f"No raw HTML was fetched for the following url: {raw_html}")
 
             content_ai = content_manager.process_content(new_content, raw_html)
 
