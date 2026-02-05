@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, ChevronDown, Sparkles, X } from "lucide-react";
 import { fetchToken } from "@/functions/user/UserData";
-import BookmarkList from "@/components/BookmarkList";
+import BookmarkList from "@/components/common/BookmarkList";
 import { Breadcrumb } from "../foldercomponents/Breadcrumb";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -378,7 +378,7 @@ export default function Page({
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedAction, setSelectedAction] = useState<string>("");
   const [selectedBookmarks, setSelectedBookmarks] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
 
   const [folderMetadata, setFolderMetadata] = useState<FolderMetadata>({
@@ -513,8 +513,8 @@ export default function Page({
         if (data.status === "success") {
           setBookmarks((prev) =>
             prev.filter(
-              (bookmark) => !selectedBookmarks.has(bookmark.content_id)
-            )
+              (bookmark) => !selectedBookmarks.has(bookmark.content_id),
+            ),
           );
 
           setSelectedBookmarks(new Set());

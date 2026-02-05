@@ -1,4 +1,4 @@
-import UnreadBookmarksPage from "@/components/UnreadBookmarksPage";
+import UnreadBookmarksPage from "@/components/common/UnreadBookmarksPage";
 
 type ChildProps = {
   activeTab?: string;

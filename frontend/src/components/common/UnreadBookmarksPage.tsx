@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 import BookmarkList from "./BookmarkList";
-import BookmarkLayout from "@/app/(content)/home/BookmarkLayout";
-import { LayoutContext } from "@/app/(content)/home/BookmarkLayout";
 import CategoryFilter from "./CategoryFilter";
 
 type ChildProps = {
@@ -129,7 +127,7 @@ const UnreadBookmarksPage: React.FC<ChildProps> = ({ activeTab }) => {
       // setBookmarks(data.bookmarks);
       setCategories((prev) => {
         const incoming = (data.categories || []).filter(
-          (c: Tags) => c?.category_name?.trim() !== ""
+          (c: Tags) => c?.category_name?.trim() !== "",
         );
         const byId = new Map(prev.map((c) => [c.category_id, c]));
         for (const c of incoming) byId.set(c.category_id, c);
@@ -173,7 +171,7 @@ const UnreadBookmarksPage: React.FC<ChildProps> = ({ activeTab }) => {
   }, [choosenCategories]);
 
   return (
-    <BookmarkLayout onSearch={fetchBookmarks}>
+    <>
       <CategoryFilter
         categories={categories}
         choosenCategories={choosenCategories}
@@ -181,10 +179,10 @@ const UnreadBookmarksPage: React.FC<ChildProps> = ({ activeTab }) => {
       />
       <BookmarkList items={bookmarks} />
 
-      {hasNext && bookmarks.length > 0 && (
+      {/* {hasNext && bookmarks.length > 0 && (
         <button onClick={() => loadNextBatch()}>load next</button>
-      )}
-    </BookmarkLayout>
+      )} */}
+    </>
   );
 };
 

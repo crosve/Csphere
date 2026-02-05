@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
-import RediscoverLayout from "./RediscoverLayout";
+// import RediscoverLayout from "./RediscoverLayout";
+import BookmarkList from "@/components/common/BookmarkList";
 
 import { fetchToken } from "@/functions/user/UserData";
 
@@ -24,7 +25,6 @@ type Bookmark = {
   categories?: Category[];
 };
 
-import BookmarkList from "@/components/BookmarkList";
 function page() {
   const fetchRediscoverContent = () => {};
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
@@ -53,9 +53,9 @@ function page() {
   }, []);
 
   return (
-    <RediscoverLayout>
+    <>
       <BookmarkList items={bookmarks}></BookmarkList>
-    </RediscoverLayout>
+    </>
   );
 }
 

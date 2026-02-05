@@ -1,6 +1,5 @@
 "use client";
 import { act, useEffect, useState } from "react";
-import TagsLayout from "./TagsLayout";
 import { fetchToken } from "@/functions/user/UserData";
 
 import {
@@ -218,7 +217,7 @@ function Page() {
   }, []);
 
   return (
-    <TagsLayout>
+    <>
       <div className="min-h-screen p-8 text-gray-900 font-sans">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-12">
           <div>
@@ -365,7 +364,7 @@ function Page() {
           })}
         </div>
       </div>
-    </TagsLayout>
+    </>
   );
 }
 

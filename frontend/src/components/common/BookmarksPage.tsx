@@ -3,12 +3,12 @@
 import { useEffect, useState, useRef } from "react";
 import BookmarkList from "./BookmarkList";
 import { Suspense } from "react";
-import BookmarkLayout from "@/app/(content)/home/BookmarkLayout";
+import BookmarkLayout from "@/app/(content)/home/layout";
 import CategoryFilter from "./CategoryFilter";
-import Loading from "./ux/Loading";
+import Loading from "../ux/Loading";
 import { list } from "postcss";
 import { Bookmark } from "@/types/bookmark";
-
+import SearchInput from "./SearchInput";
 type ChildProps = {
   activeTab?: string;
 };
@@ -192,7 +192,8 @@ const BookmarksPage: React.FC<ChildProps> = ({ activeTab }) => {
   }, [choosenCategories]);
 
   return (
-    <BookmarkLayout onSearch={fetchBookmarks}>
+    <>
+      {/* <SearchInput onSearch={onSearch} /> */}
       <CategoryFilter
         choosenCategories={choosenCategories}
         categories={categories}
@@ -206,7 +207,7 @@ const BookmarksPage: React.FC<ChildProps> = ({ activeTab }) => {
           You've reached the end of your bookmarks!{" "}
         </h1>
       )}
-    </BookmarkLayout>
+    </>
   );
 };
 

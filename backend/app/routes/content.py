@@ -62,6 +62,12 @@ router = APIRouter(
 )
 
 
+# class UserSavedContentResponse(BaseModel):
+#     bookmarks: list[UserSavedContent]
+#     categories: Optional[list[CategoryOut] ] = []
+#     next_cursor: Optional[str] = ''
+#     has_next: Optional[bool] = False
+
 
 @router.get("/search", response_model=UserSavedContentResponse, status_code=status.HTTP_200_OK)
 def search(query: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -93,7 +99,6 @@ def search(query: str, user: User = Depends(get_current_user), db: Session = Dep
 
 @router.get("/rediscover", status_code=200)
 def get_discover_content(user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
-    print('here')
     try:
         return get_discover_content_service(user_id=user_id, db=db)
 

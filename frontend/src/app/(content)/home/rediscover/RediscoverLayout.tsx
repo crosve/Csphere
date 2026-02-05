@@ -48,6 +48,7 @@ function RediscoverLayout({ children }: Props) {
 
   return (
     <div className="container  px-4 py-8 min-h-screen flex flex-col space-y-6">
+      hiii2
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}

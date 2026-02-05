@@ -36,6 +36,13 @@ from dateutil.relativedelta import relativedelta
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
+
+# class UserSavedContentResponse(BaseModel):
+#     bookmarks: list[UserSavedContent]
+#     categories: Optional[list[CategoryOut] ] = []
+#     next_cursor: Optional[str] = ''
+#     has_next: Optional[bool] = False
+
 def search_content(*, db : Session, query: str,user: User):
 
     manager = get_embedding_manager()
@@ -44,6 +51,7 @@ def search_content(*, db : Session, query: str,user: User):
         raise EmbeddingManagerNotFound()
     manager.db = db
 
+    #Probably the one that takes the longest to query
     parsed_query = QueryPreprocessor().preprocess_query(query)
 
     results = manager.query_similar_content(
@@ -52,6 +60,17 @@ def search_content(*, db : Session, query: str,user: User):
     )
 
     bookmark_data = []
+
+# class UserSavedContent(BaseModel):
+#     content_id: UUID
+#     url: str
+#     title: Optional[str]
+#     source: Optional[str]
+#     ai_summary: Optional[str]
+#     first_saved_at: datetime
+#     notes: Optional[str]
+#     tags: Optional[list[TagOut]]
+#     categories: Optional[list[CategoryOut]]
 
     for content_ai, content in results:
         bookmark_data.append(
@@ -63,7 +82,8 @@ def search_content(*, db : Session, query: str,user: User):
                 first_saved_at=content.first_saved_at,
                 ai_summary=content_ai.ai_summary,
                 notes="", 
-                tags=[]    
+                tags=[],
+                categories=[]    
             )
         )
 
@@ -74,7 +94,8 @@ def search_content(*, db : Session, query: str,user: User):
     return {
         "bookmarks": bookmark_data,
         "categories": [],  # or `None`, depending on how you define Optional
-        "has_next" : False
+        "has_next" : False,
+        "next_cursor": '',
     }
     
 

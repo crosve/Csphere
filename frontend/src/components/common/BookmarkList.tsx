@@ -1,8 +1,8 @@
 import BookmarkCard from "./BookmarkCard";
 
 import { useContext } from "react";
-import { LayoutContext } from "@/app/(content)/home/BookmarkLayout";
-import FolderBookmarkCard from "./folder/FolderBookmarkCard";
+import { LayoutContext } from "@/app/(content)/home/layout";
+import FolderBookmarkCard from "../folder/FolderBookmarkCard";
 
 interface Tag {
   tag_id: string;

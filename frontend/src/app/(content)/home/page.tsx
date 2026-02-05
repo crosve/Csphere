@@ -1,4 +1,4 @@
-import BookmarksPage from "@/components/BookmarksPage";
+import BookmarksPage from "@/components/common/BookmarksPage";
 
 interface BookmarkListProps {
   activeTab?: string;

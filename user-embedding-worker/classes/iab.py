@@ -38,7 +38,6 @@ class SolrQueryIAB(SolrQuery):
         super().__init__()
         self.file_path = file_path
         self.title = title
-        print("current file url: ", file_url)
     
         self.file_url = file_url #make sure file_url is there
         self.ai_summary = ai_summary

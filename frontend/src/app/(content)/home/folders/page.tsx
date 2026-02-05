@@ -112,7 +112,7 @@ function page() {
       if (data && data.success) {
         console.log("successfully deleted");
         setFolders((prev) =>
-          prev.filter((folder) => folder.folderId != folderId)
+          prev.filter((folder) => folder.folderId != folderId),
         );
 
         toast.success("Folder succesfully deleted");
@@ -173,7 +173,7 @@ function page() {
   };
 
   return (
-    <FolderLayout>
+    <>
       <div className="w-full space-y-6 gap-4 mb-4">
         <div className="flex items-center gap-3 mb-8">
           {/* New Button */}
@@ -282,7 +282,7 @@ function page() {
           />
         ))}
       </div>
-    </FolderLayout>
+    </>
   );
 }
 
