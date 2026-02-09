@@ -25,10 +25,11 @@ type Bookmark = {
   categories?: Category[];
 };
 
+type MonthBookmarkData = Record<string, Bookmark[]>;
+
 function page() {
   const fetchRediscoverContent = () => {};
-  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
-
+  const [monthBookmarks, setMonthBookmarks] = useState<MonthBookmarkData>({});
   useEffect(() => {
     const fetchContent = async () => {
       const token = fetchToken();
@@ -41,12 +42,10 @@ function page() {
         method: "GET",
       });
 
-      console.log("current res data: ", res);
-
       const data = await res.json();
-      console.log("data: ", data);
+      console.log("month bookmak data: ", data);
 
-      setBookmarks(data);
+      setMonthBookmarks(data);
     };
 
     fetchContent();
@@ -54,7 +53,13 @@ function page() {
 
   return (
     <>
-      <BookmarkList items={bookmarks}></BookmarkList>
+      {Object.entries(monthBookmarks).map(([month, bookmarks]) => (
+        // Use a Fragment or a div with a key when mapping
+        <div key={month} className="mb-10">
+          <h2 className="text-lg font-semibold">{month}</h2>
+          <BookmarkList items={bookmarks} />
+        </div>
+      ))}
     </>
   );
 }

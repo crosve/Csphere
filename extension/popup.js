@@ -740,25 +740,25 @@ async function syncAllBrowserBookmarks() {
   console.log("Checking for bookmarks API...");
 
   // Directly check the chrome global, ignoring the polyfill for a moment
-  if (typeof chrome !== "undefined" && chrome.bookmarks) {
-    const bookmarkTree = await chrome.bookmarks.getTree();
-    console.log("Success! Tree found:", bookmarkTree);
+  // if (typeof chrome !== "undefined" && chrome.bookmarks) {
+  //   const bookmarkTree = await chrome.bookmarks.getTree();
+  //   console.log("Success! Tree found:", bookmarkTree);
 
-    const bookmarkData = bookmarkTree[0].children;
-    console.log("bookmark data: ", bookmarkData);
+  //   const bookmarkData = bookmarkTree[0].children;
+  //   console.log("bookmark data: ", bookmarkData);
 
-    const body = {
-      bookmarks: bookmarkData,
-    };
+  //   const body = {
+  //     bookmarks: bookmarkData,
+  //   };
 
-    //Do the api request now
-    const data = await apiRequest("/content/import", "POST", body);
+  //   //Do the api request now
+  //   const data = await apiRequest("/content/import", "POST", body);
 
-    console.log("Returned data: ", data);
-  } else {
-    console.error(
-      "Still not found. Manifest permissions are definitely active, but API is not injected.",
-    );
-    showStatus("Extension needs a full Chrome restart", "error");
-  }
+  //   console.log("Returned data: ", data);
+  // } else {
+  //   console.error(
+  //     "Still not found. Manifest permissions are definitely active, but API is not injected.",
+  //   );
+  //   showStatus("Extension needs a full Chrome restart", "error");
+  // }
 }

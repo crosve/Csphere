@@ -1,77 +1,9 @@
-// "use client";
-// import Image from "next/image";
-// import { motion } from "framer-motion";
-// import FeatureSection from "@/components/FeatureSection";
-
-// export default function Home() {
-//   return (
-//     <div className="pt-serif-bold">
-//       <main className="min-h-screen w-full flex items-center justify-center text-white bg-gray-300">
-//         <motion.div
-//           initial={{ opacity: 0, y: -20 }}
-//           animate={{ opacity: 1, y: 0 }}
-//           transition={{ duration: 0.8 }}
-//           className="flex flex-col items-center justify-center w-10/12 md:w-8/12 h-full gap-10 mt-12"
-//         >
-//           <section className="max-w-3xl">
-//             <h1 className="text-4xl md:text-6xl pt-serif-regular text-center text-white mb-8">
-//               Save and Revisit your favorite bookmarks with{" "}
-//               <span className="block mt-2 font-bold italic text-6xl">
-//                 CSphere
-//               </span>
-//             </h1>
-//             <p className="text-2xl text-center pt-serif-semibold text-gray-300 mb-4 max-w-2xl mx-auto">
-//               Never miss out on saving your content again.
-//             </p>
-//           </section>
-
-//           <motion.section
-//             initial={{ opacity: 0, y: 20 }}
-//             animate={{ opacity: 1, y: 0 }}
-//             transition={{ duration: 0.8, delay: 0.2 }}
-//             className="flex flex-col md:flex-row justify-center gap-6 w-[300px] md:w-[400px] lg:w-[500px]"
-//           >
-//             <a
-//               href="https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2Fcrosve%2FCsphere%2Ftree%2Fmain%2Fchrome_extension"
-//               target="_blank"
-//               className="bg-white text-gray-900 text-sm font-medium px-6 py-3 rounded-lg w-full text-center hover:bg-gray-100 transition duration-300 flex items-center justify-center"
-//             >
-//               Download Chrome Extension
-//             </a>
-//             <a
-//               href="#feature-section"
-//               className="text-white text-sm font-medium px-6 py-3 w-full text-center hover:text-gray-200 transition duration-300 bg-[#202A29] rounded-lg flex items-center justify-center"
-//             >
-//               View Demo
-//             </a>
-//           </motion.section>
-//         </motion.div>
-//       </main>
-//       <section id="feature-section" className="w-full h-[800px]">
-//         <FeatureSection />
-//       </section>
-//     </div>
-//   );
-// }
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Menu,
-  Download,
-  Play,
-  Bookmark,
-  Globe,
-  FolderTree,
-} from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
+import { Download, Play, Bookmark, Globe, FolderTree } from "lucide-react";
+
 import { motion, useScroll } from "framer-motion";
-import { useRef } from "react";
-import FeatureSection from "@/components/FeatureSection";
-import LogoComponent from "@/app/components/LogoComponent";
-import Sphere from "@/app/components/sphere";
+import FeatureSection from "@/components/common/FeatureSection";
 
 const features = [
   {
@@ -157,7 +89,8 @@ export default function LandingPage() {
               transition={{ duration: 0.8, delay: 0.6 }}
               className="text-base md:text-xl text-gray-200 mt-8 max-w-3xl mx-auto leading-relaxed"
             >
-              AI-powered bookmark manager that brings your content back to life. Search, organize, and rediscover everything you've ever saved.
+              AI-powered bookmark manager that brings your content back to life.
+              Search, organize, and rediscover everything you've ever saved.
             </motion.p>
           </section>
 
@@ -206,7 +139,8 @@ export default function LandingPage() {
               viewport={{ once: true }}
               className="text-xl text-gray-300"
             >
-              Join today to transform your bookmark chaos into an organized, searchable knowledge base. 
+              Join today to transform your bookmark chaos into an organized,
+              searchable knowledge base.
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -228,110 +162,6 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      {/* <footer
-        id="contact"
-        className="bg-[#202A29] flex w-ful h-full items-center justify-center text-white py-16 relative"
-      >
-        <div className="container px-4 md:px-6">
-          <div className="grid gap-8 lg:grid-cols-4">
-            <div className="rounded p-2 flex items-center justify-center">
-              <div className="w-16 h-16 md:w-20 md:h-20 lg:w-32 lg:h-32 relative">
-                <Image
-                  src="/cspherelogo2.png"
-                  alt="Logo"
-                  fill
-                  className="object-contain invert brightness-0"
-                  sizes="(max-width: 768px) 64px, (max-width: 1024px) 80px, 128px"
-                  priority
-                  quality={100}
-                />
-              </div>
-            </div>
-
-            <div>
-              <h3 className="font-semibold mb-4">Product</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Features
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Chrome Extension
-                  </Link>
-                </li>
-
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Security
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="font-semibold mb-4">Company</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    About
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Blog
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Open Source
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Privacy
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="font-semibold mb-4">Support</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Help Center
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Contact
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    GitHub
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Documentation
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>
-              &copy; {new Date().getFullYear()} CSphere. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer> */}
     </div>
   );
 }

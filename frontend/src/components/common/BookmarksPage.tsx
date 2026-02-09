@@ -193,7 +193,7 @@ const BookmarksPage: React.FC<ChildProps> = ({ activeTab }) => {
 
   return (
     <>
-      {/* <SearchInput onSearch={onSearch} /> */}
+      <SearchInput onSearch={fetchBookmarks} />
       <CategoryFilter
         choosenCategories={choosenCategories}
         categories={categories}

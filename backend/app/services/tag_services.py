@@ -1,10 +1,18 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.schemas.tag import TagCreationData
 from uuid import UUID, uuid4
 from app.exceptions.tag_exceptions import TagsNotFound, TagAlreadyExists, TagNotFound
+from app.schemas.content import ContentWithSummary
 from app.data_models.tag import Tag
+from app.data_models.content import Content
+from app.data_models.content_item import ContentItem
+from app.data_models.content_tag import ContentTag
+from app.data_models.content_ai import ContentAI
+from app.schemas.content import ContentWithSummary, UserSavedContent, TabRemover, NoteContentUpdate, CategoryOut, BookmarkImportRequest
+from app.schemas.tag import TagOut
+
 from datetime import datetime
-from sqlalchemy import delete
+from sqlalchemy import delete, desc
 import logging
 
 logger = logging.getLogger(__name__) 
@@ -98,3 +106,49 @@ def update_tag_service(user_id: UUID, tag_id: str, updated_tag_name: str, db: Se
     db.commit()
 
     return {'status': 'success'}
+
+
+def fetch_tag_bookmark_service(tag_id: str, user_id: str, db: Session):
+    try:
+        query = (
+            db.query(ContentItem, Content, ContentAI.ai_summary)
+            .join(Content, ContentItem.content_id == Content.content_id)
+            .outerjoin(ContentAI, Content.content_id == ContentAI.content_id)
+            # Use .c to access columns on Table objects
+            .join(ContentTag, ContentItem.content_id == ContentTag.c.content_id)
+            .options(
+                joinedload(ContentItem.tags),
+                joinedload(Content.categories)
+            )
+            .filter(
+                ContentItem.user_id == user_id,
+                ContentTag.c.tag_id == tag_id # Added .c here too
+            )
+        )
+
+        results = query.order_by(desc(ContentItem.saved_at)).all()
+
+        bookmarks = []
+        for item, content, ai_summary in results:
+            item_user_tags = [TagOut.from_orm(t) for t in item.tags]
+            item_categories = [CategoryOut.from_orm(cat) for cat in content.categories]
+
+            bookmarks.append(
+                UserSavedContent(
+                    content_id=content.content_id,
+                    url=content.url,
+                    title=content.title,
+                    source=content.source,
+                    ai_summary=ai_summary,
+                    first_saved_at=item.saved_at,
+                    notes=item.notes,
+                    tags=item_user_tags,
+                    categories=item_categories
+                )
+            )
+        return bookmarks
+
+    except Exception as e:
+        # This will now capture the specific line if it fails again
+        logging.error(f"Failed to fetch bookmarks connected to the id: {e}")
+        return []

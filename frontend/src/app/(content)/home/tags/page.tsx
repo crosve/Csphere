@@ -1,6 +1,7 @@
 "use client";
 import { act, useEffect, useState } from "react";
 import { fetchToken } from "@/functions/user/UserData";
+import { useRouter } from "next/navigation";
 
 import {
   Popover,
@@ -40,6 +41,13 @@ function Page() {
     tag_id: "",
   });
   const [targetTagId, setTargetTagId] = useState<string>("");
+
+  const router = useRouter();
+
+  const handleTagView = (tagId: string) => {
+    console.log("navigating to tag page");
+    router.push(`/home/tags/${tagId}`);
+  };
 
   const handleSaveEdit = async (
     e: React.MouseEvent | React.KeyboardEvent,
@@ -311,7 +319,6 @@ function Page() {
                     className="absolute bg-amber-100 top-2 right-2 w-4 h-4 accent-gray-900 cursor-pointer"
                   />
                 )}
-
                 {targetTagId === tag.tag_id ? (
                   <input
                     autoFocus
@@ -329,7 +336,6 @@ function Page() {
                     {tag.tag_name}
                   </span>
                 )}
-
                 {/* Edit label - hidden during Bulk Edit to keep UI clean */}
                 {!isBulkEdit && (
                   <>
@@ -346,16 +352,28 @@ function Page() {
                         Save Edit
                       </span>
                     ) : (
-                      <span
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          console.log("editing tag id: ", tagId);
-                          handleEditTag(tag.tag_id);
-                        }}
-                        className="opacity-0 group-hover:opacity-100 text-[10px] cursor-pointer text-gray-500 font-mono tracking-tighter"
-                      >
-                        EDIT
-                      </span>
+                      <>
+                        <span
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            console.log("editing tag id: ", tagId);
+                            handleTagView(tagId);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 text-[10px] cursor-pointer text-gray-500 font-mono tracking-tighter"
+                        >
+                          View
+                        </span>
+                        <span
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            console.log("editing tag id: ", tagId);
+                            handleEditTag(tag.tag_id);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 text-[10px] cursor-pointer text-gray-500 font-mono tracking-tighter"
+                        >
+                          EDIT
+                        </span>
+                      </>
                     )}
                   </>
                 )}

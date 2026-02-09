@@ -621,15 +621,18 @@ def get_discover_content_service(user_id: str, db: Session):
     user = db.query(User).filter(User.id == user_id).first()
 
     if not user:
-        return [] # Or raise an HTTPException
+        return []
 
     user_embedding = user.user_embedding
-    discovered_content = []
 
-    # Iterate through the last 6 months
+    #dict object for itterating through months 
+    discovered_content = {}
+
     for i in range(6):
         start_date = (datetime.now() - relativedelta(months=i)).replace(day=1, hour=0, minute=0, second=0)
         end_date = start_date + relativedelta(months=1)
+
+        current_month_name = start_date.strftime('%B %Y') 
 
         # Query for top 4 similar items in this specific month
         # Using pgvector operator <=> for cosine similarity
@@ -642,13 +645,15 @@ def get_discover_content_service(user_id: str, db: Session):
             .filter(ContentItem.saved_at < end_date)
             .filter(ContentItem.read == False)
             .order_by(ContentAI.embedding.cosine_distance(user_embedding))
-            .limit(5)
+            .limit(6)
             .all()
         )
 
+        curr_matched_items = []
+
 
         for content_item, content, ai in month_items:
-            discovered_content.append(ContentWithSummary(
+            curr_matched_items.append(ContentWithSummary(
                 content_id=content.content_id,
                 title=content.title,
                 url=content.url,
@@ -657,5 +662,8 @@ def get_discover_content_service(user_id: str, db: Session):
                 ai_summary=ai.ai_summary,
                 folder=''
             ))
+
+        discovered_content[current_month_name] = curr_matched_items
+        
 
     return discovered_content

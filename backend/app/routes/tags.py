@@ -10,7 +10,7 @@ from app.data_models.content import Content
 from app.data_models.content_item import ContentItem
 from app.data_models.content_ai import ContentAI
 
-from app.services.tag_services import create_tag_service, get_user_tags_service, delete_user_tags_service, update_tag_service
+from app.services.tag_services import create_tag_service, get_user_tags_service, delete_user_tags_service, update_tag_service, fetch_tag_bookmark_service
 from app.schemas.tag import TagCreationData, TagDeleteData, TagUpdateData
 from app.db.database import get_db
 from app.exceptions.tag_exceptions import TagAlreadyExists,  UserTagRelationNotFound, TagNotFound
@@ -91,3 +91,13 @@ def update_tag(tag_id: str, updateTagBody : TagUpdateData, user_id: UUID = Depen
     
     except Exception as e:
         logging.error(f"Failed to update the users tags, {e}")
+
+
+@router.get("/tag/bookmark/{tag_id}")
+def get_tag_bookmarks(tag_id: str, user_id: UUID = Depends(get_current_user_id), db : Session = Depends(get_db)):
+    try:
+        return fetch_tag_bookmark_service(tag_id=tag_id, user_id=user_id, db=db)
+
+
+    except Exception as e:
+        logging.error(f"Failed to fetch bookmarks connected to the id:, {e} ")

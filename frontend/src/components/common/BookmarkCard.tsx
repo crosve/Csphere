@@ -137,7 +137,7 @@ export default function BookmarkCard({ bookmark }: BookmarkCardProps) {
 
   const setReadLink = async () => {
     try {
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/user/content/${bookmark.content_id}`;
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/content/read/${bookmark.content_id}`;
       const response = await fetch(apiUrl, {
         method: "POST",
         headers: {

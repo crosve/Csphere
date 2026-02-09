@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import BookmarkList from "./BookmarkList";
 import CategoryFilter from "./CategoryFilter";
 
+import SearchInput from "./SearchInput";
 type ChildProps = {
   activeTab?: string;
 };
@@ -172,6 +173,7 @@ const UnreadBookmarksPage: React.FC<ChildProps> = ({ activeTab }) => {
 
   return (
     <>
+      <SearchInput onSearch={fetchBookmarks} />
       <CategoryFilter
         categories={categories}
         choosenCategories={choosenCategories}

@@ -53,7 +53,6 @@ export default function Layout({ children }: Props) {
         <div className="flex flex-col gap-8 md:flex-row w-full">
           <div className="flex-1 w-full items-center justify-center flex overflow-visible relative z-0">
             <div className="container  px-4 py-8 min-h-screen flex flex-col space-y-6">
-              original
               <Tabs
                 value={activeTab}
                 onValueChange={setActiveTab}
