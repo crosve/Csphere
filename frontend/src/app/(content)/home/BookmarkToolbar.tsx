@@ -82,7 +82,11 @@ export function BookmarkToolbar({
       {/* Navigation Tabs with Sliding Animation */}
       <TabsList className="relative grid w-auto max-w-4xl grid-cols-5 p-0 mb-2 border rounded-lg bg-transparent border-black overflow-hidden h-12">
         {tabs.map((tab) => {
-          const isActive = pathname === tab.href;
+          let isActive = pathname === tab.href;
+
+          // if (pathname.includes("tag")) {
+          //   isActive = true;
+          // }
 
           return (
             <Link
