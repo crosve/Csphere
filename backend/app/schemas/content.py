@@ -62,6 +62,7 @@ class UserSavedContent(BaseModel):
     notes: Optional[str]
     tags: Optional[list[TagOut]]
     categories: Optional[list[CategoryOut]]
+    html_url: Optional[str] = ''
 
 class CategoryItem(BaseModel):
     category_id: str

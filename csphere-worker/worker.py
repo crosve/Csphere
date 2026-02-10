@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 from processors import get_processor
 from processors.bucket import BucketProcessor
 from processors.content import ContentProcessor
+from processors.web import WebParsingProcessor
 from schemas.content_schemas import MessageSchema
 
 from contextlib import contextmanager
@@ -63,6 +64,11 @@ def handle_message(message : dict, pydantic_message : MessageSchema):
                 logging.info('processing the content for folders')
                 bucketProcessor : BucketProcessor = get_processor('process_folder', db=db)
                 bucketProcessor.process(message=message, content_id=content_id)
+
+            if content_id != '':
+                webProcessor : WebParsingProcessor = get_processor('process_webpage', db=db)
+                logging.info(f"Processing following url and saving to content table: {pydantic_message.content_payload.url}")
+                webProcessor.process(content_id=content_id, url=pydantic_message.content_payload.url)
 
     except Exception as e:
         logging.error(f"Failed to fully process message: {e}")

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { fetchToken } from "@/functions/user/UserData";
 import { toast } from "sonner";
 import ShareModal from "./ShareModal";
-
+import ArchiveModal from "@/app/(content)/home/ArchiveModal";
 interface BookMarkSettingProps {
   content_id: string;
   url: string;
@@ -115,6 +115,9 @@ function BookMarkSettingIcon({
 }: BookMarkSettingProps) {
   const [mainPopoverOpen, setMainPopoverOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
+
+  const [archiveModalOpen, setArchiveModalOpen] = useState(false);
+  const [archiveUrl, setArchiveUrl] = useState("");
   const handleAddToFolder = async (folder: FolderProps) => {
     try {
       const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/folder/add`;
@@ -141,6 +144,34 @@ function BookMarkSettingIcon({
     }
   };
 
+  const handleView = async (content_id: string) => {
+    try {
+      const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/content/${content_id}/archive`;
+      const token = fetchToken();
+      const response = await fetch(API_URL, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      // Assuming backend returns { "url": "..." }
+      if (data.url) {
+        setArchiveUrl(data.url);
+        setArchiveModalOpen(true);
+        setMainPopoverOpen(false);
+      } else {
+        toast.error("Archive not found for this item");
+      }
+    } catch (error) {
+      console.log("Error fetching archive: ", error);
+      toast.error("Failed to load archive");
+    }
+  };
+
   return (
     <div className="">
       <div className="relative">
@@ -158,6 +189,19 @@ function BookMarkSettingIcon({
               {!folder_bookmark && (
                 <FolderPopover onAddToFolder={handleAddToFolder} />
               )}
+
+              {/* Open the saved content html */}
+              <div className="cursor-pointer hover:bg-gray-200 p-2 rounded transition-colors">
+                <p
+                  onClick={() => {
+                    console.log("handle view placeholder");
+                    handleView(content_id);
+                  }}
+                  className="text-gray-700"
+                >
+                  View{" "}
+                </p>
+              </div>
 
               {/* Other menu items */}
               <div className="cursor-pointer hover:bg-gray-200 p-2 rounded transition-colors">
@@ -188,6 +232,16 @@ function BookMarkSettingIcon({
           isOpen={shareModalOpen}
           onClose={() => setShareModalOpen(false)}
           bookmarkUrl={url}
+        />
+      )}
+      {archiveModalOpen && (
+        <ArchiveModal
+          isOpen={archiveModalOpen}
+          onClose={() => {
+            setArchiveModalOpen(false);
+            setArchiveUrl(""); // Clear URL on close
+          }}
+          archiveUrl={archiveUrl}
         />
       )}
     </div>

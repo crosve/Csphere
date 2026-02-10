@@ -48,7 +48,7 @@ class ContentProcessor(BaseProcessor):
 
             if not raw_html or raw_html == '':
                 logging.info("No raw html provided, categorization and summarization may be poor")
-                raw_html = self.get_html_content(url=content_url)
+                raw_html = self.capture_page(url=content_url)
 
                 #confirm the raw html was fetched
 

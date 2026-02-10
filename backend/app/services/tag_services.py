@@ -53,7 +53,7 @@ def get_user_tags_service(user_id: UUID, db: Session):
         # Keeping your existing logic, though an empty list is often preferred over an exception
         return []
     
-    logging.info("All the tags: ", tags)
+    logging.info(f"All the tags: {tags}")
     
     return [
         {

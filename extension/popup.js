@@ -627,15 +627,16 @@ function resetBookmarkForm() {
   renderTags();
 }
 
+//Doesn't etract html anymore
 async function extractHTMLFromPage() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-  const [{ result }] = await chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    func: () => document.documentElement.outerHTML,
-  });
+  // const [{ result }] = await chrome.scripting.executeScript({
+  //   target: { tabId: tab.id },
+  //   func: () => document.documentElement.outerHTML,
+  // });
 
-  return { html: result, tab };
+  return { html: "", tab };
 }
 
 function renderLoginView() {

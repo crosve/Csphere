@@ -232,6 +232,7 @@ def get_content_service(
 #     first_saved_at: datetime
 #     notes: Optional[str]
 #     tags: Optional[list[CategoryOut]]
+#     html_url: Optional[str] = ''
         bookmarks.append(
             UserSavedContent(
                 content_id=content.content_id,
@@ -242,7 +243,8 @@ def get_content_service(
                 first_saved_at=item.saved_at,
                 notes=item.notes,
                 tags=item_user_tags,
-                categories=item_categories
+                categories=item_categories,
+                html_url=content.html_content_url if content.html_content_url  else ''
         
             )
         )

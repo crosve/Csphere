@@ -6,6 +6,9 @@ from data_models.content import Content
 from utils.utils import handle_existing_content
 from classes.EmbeddingManager import ContentEmbeddingManager
 
+import asyncio
+from playwright.async_api import async_playwright
+
 import requests
 logger = logging.getLogger(__name__)
 
@@ -34,6 +37,27 @@ class BaseProcessor(ABC):
         db = next(db_gen)
         return db 
     
+
+
+    async def capture_page(self, url):
+        async with async_playwright() as p:
+            browser = await p.chromium.launch()
+            page = await browser.new_page()
+
+            print(f"Archiving: {url}...")
+            
+            # Go to the URL and wait until the network is idle
+            await page.goto(url, wait_until="networkidle")
+
+            text_content = await page.content() # Raw HTML
+            # visible_text = await page.inner_text("body")
+
+
+            return text_content
+            
+   
+
+      
 
     def get_html_content(self, url: str) -> str:
         try:
