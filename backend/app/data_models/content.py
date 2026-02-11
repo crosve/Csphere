@@ -17,6 +17,7 @@ class Content(Base):
     title = Column(String, nullable=True)
     source = Column(String, nullable=True)
     first_saved_at = Column(TIMESTAMP(timezone=True), default=func.now())
+    html_content_url = Column(String, nullable=True)
     content_ai = relationship("ContentAI", backref="content", uselist=False)
 
 

@@ -38,6 +38,7 @@ dependencies = [
     "ecdsa==0.19.1",
     "email-validator==2.2.0",
     "exceptiongroup==1.2.2",
+    "fake-useragent>=2.2.0",
     "fastapi==0.115.12",
     "fastapi-cli==0.0.7",
     "filelock==3.18.0",

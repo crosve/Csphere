@@ -6,11 +6,19 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+
+#AWS imports
+import boto3
+from app.functions.AWS_s3 import extract_s3_key, get_presigned_url
+
+
 # 3. Database & Models (Internal Data Structure)
 from app.db.database import get_db
 from app.data_models.user import User
 from app.data_models.content import Content
 from app.data_models.content_item import ContentItem
+from app.core.settings import get_settings
+
 
 # 4. Schemas (Pydantic / Request-Response shapes)
 from app.schemas.content import (
@@ -62,6 +70,18 @@ router = APIRouter(
 )
 
 
+settings = get_settings()
+settings.BUCKET_NAME = settings.BUCKET_NAME
+
+s3 = boto3.client(
+    "s3",
+    region_name="us-east-1",  
+    aws_access_key_id=settings.AWS_ACCESS_KEY,
+    aws_secret_access_key=settings.AWS_SECRET_KEY,
+)
+
+
+
 # class UserSavedContentResponse(BaseModel):
 #     bookmarks: list[UserSavedContent]
 #     categories: Optional[list[CategoryOut] ] = []
@@ -104,6 +124,27 @@ def get_discover_content(user_id: UUID = Depends(get_current_user_id), db: Sessi
 
     except Exception as e:
         logging.error(f"An error occured trying to fetch the users content: {e}")
+
+
+@router.get("/{content_id}/archive")
+def get_content_from_html(content_id: str, user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
+    try:
+        item  : Content= db.query(Content).filter(Content.content_id == content_id).first()
+
+        #html_content_url
+
+        presigned_url = get_presigned_url(str(item.html_content_url))
+
+        return {"url": presigned_url, 'success': True}
+
+
+
+
+
+
+    except Exception as e:
+        logging.error(f"Failed to get presigned url for the html contnt; {e}")
+
 
 @router.post("/save")
 def save_content(content: ContentCreate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):

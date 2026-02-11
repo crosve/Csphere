@@ -198,8 +198,6 @@ class ContentEmbeddingManager:
     def _enrich_content(self, url: str, content_id: UUID, db: Session, raw_html):
         try:
            
-            # print("extracting raw html from : ", raw_html[:20])
-
             metadata = self._extract_metadata_and_body(raw_html)
             metadata["body_text"] = self._clean_text(metadata["body_text"])
 

@@ -17,6 +17,6 @@ export interface Bookmark {
   first_saved_at?: string; // ISO timestamp, might also be Date if parsed
   tags?: Tag[];
   categories?: Category[];
-
+  html_url?: string;
   notes?: string;
 }

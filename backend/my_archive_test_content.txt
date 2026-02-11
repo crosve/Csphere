@@ -1,0 +1,200 @@
+Jump to content
+Main menu
+Search
+Donate
+Create account
+Log in
+
+Wikipedia began as an impossible dream. Today, we celebrate 25 years of humanity at its best. Join us
+
+Contents hide
+(Top)
+History and development
+Methods of collection
+Toggle Methods of collection subsection
+Transactional archiving
+Difficulties and limitations
+Toggle Difficulties and limitations subsection
+Crawlers
+General limitations
+Laws
+See also
+General bibliography
+References
+External links
+Web archiving
+24 languages
+Article
+Talk
+Read
+Edit
+View history
+Tools
+Appearance hide
+Text
+Small
+Standard
+Large
+Width
+Standard
+Wide
+Color (beta)
+Automatic
+Light
+Dark
+From Wikipedia, the free encyclopedia
+"Web archive" redirects here. For other uses, see Web archive (disambiguation).
+
+Web archiving is the process of collecting, preserving, and providing access to material from the World Wide Web. The aim is to ensure that information is preserved in an archival format for research and the public.[1] The process of platformizing archives, digitizing historical records via interfaces patterned on social media platforms, can reshape collective memory by privileging content that aligns with social-media logic such as popularity, connectivity, and programmability.[2]
+
+Web archivists typically employ automated web crawlers to capturing the massive amount of information on the Web. A widely known web archive service is the Wayback Machine, run by the Internet Archive.
+
+The growing portion of human culture created and recorded on the web makes it inevitable that more and more libraries and archives will have to face the challenges of web archiving.[3] National libraries, national archives, and various consortia of organizations are also involved in archiving Web content to prevent its loss.
+
+Commercial web archiving software and services are also available to organizations that need to archive their own web content for corporate heritage, regulatory, or legal purposes.
+
+History and development[edit]
+
+While curation and organization of the web has been prevalent since the mid- to late-1990s, one of the first large-scale web archiving projects was the Internet Archive, a non-profit organization created by Brewster Kahle in 1996.[4] The Internet Archive released its own search engine for viewing archived web content, the Wayback Machine, in 2001.[4] As of 2018, the Internet Archive was home to 40 petabytes of data.[5] The Internet Archive also developed many of its own tools for collecting and storing its data, including PetaBox for storing large amounts of data efficiently and safely, and Heritrix, a web crawler developed in conjunction with the Nordic national libraries.[4] Other projects launched around the same time included a web archiving project by the National Library of Canada, Australia's Pandora, Tasmanian web archives and Sweden's Kulturarw3.[6][7]
+
+From 2001 to 2010,[failed verification] the International Web Archiving Workshop (IWAW) provided a platform to share experiences and exchange ideas.[8][9] The International Internet Preservation Consortium (IIPC), established in 2003, has facilitated international collaboration in developing standards and open source tools for the creation of web archives.[10]
+
+The now-defunct Internet Memory Foundation was founded in 2004 and founded by the European Commission in order to archive the web in Europe.[4] This project developed and released many open source tools, such as "rich media capturing, temporal coherence analysis, spam assessment, and terminology evolution detection."[4] The data from the foundation is now housed by the Internet Archive, but not currently publicly accessible.[11]
+
+Despite the fact that there is no centralized responsibility for its preservation, web content is rapidly becoming the official record. For example, in 2017, the United States Department of Justice affirmed that the government treats the President's tweets as official statements.[12]
+
+Methods of collection[edit]
+See also: List of Web archiving initiatives and List of web archiving file formats
+
+Web archivists generally archive various types of web content including HTML web pages, style sheets, JavaScript, images, and video. They also archive metadata about the collected resources such as access time, MIME type, and content length. This metadata is useful in establishing authenticity and provenance of the archived collection.
+
+Transactional archiving[edit]
+
+Transactional archiving is an event-driven approach, which collects the actual transactions which take place between a web server and a web browser. It is primarily used as a means of preserving evidence of the content which was actually viewed on a particular website, on a given date. This may be particularly important for organizations which need to comply with legal or regulatory requirements for disclosing and retaining information.[13]
+
+A transactional archiving system typically operates by intercepting every HTTP request to, and response from, the web server, filtering each response to eliminate duplicate content, and permanently storing the responses as bitstreams.
+
+Difficulties and limitations[edit]
+Crawlers[edit]
+
+Web archives which rely on web crawling as their primary means of collecting the Web are influenced by the difficulties of web crawling:
+
+The robots exclusion protocol may request crawlers not access portions of a website. Some web archivists may ignore the request and crawl those portions anyway.
+Large portions of a website may be hidden in the Deep Web. For example, the results page behind a web form can lie in the Deep Web if crawlers cannot follow a link to the results page.
+Crawler traps (e.g., calendars) may cause a crawler to download an infinite number of pages, so crawlers are usually configured to limit the number of dynamic pages they crawl.
+Most of the archiving tools do not capture the page as it is. It is observed that ad banners and images are often missed while archiving.
+
+However, it is important to note that a native format web archive, i.e., a fully browsable web archive, with working links, media, etc., is only really possible using crawler technology.
+
+The Web is so large that crawling a significant portion of it takes a large number of technical resources. Also, the Web is changing so fast that portions of a website may suffer modifications before a crawler has even finished crawling it.
+
+General limitations[edit]
+
+Some web servers are configured to return different pages to web archiver requests than they would in response to regular browser requests. This is typically done to fool search engines into directing more user traffic to a website and is often done to avoid accountability or to provide enhanced content only to those browsers that can display it.
+
+Not only must web archivists deal with the technical challenges of web archiving, they must also contend with intellectual property laws. Peter Lyman[14] states that "although the Web is popularly regarded as a public domain resource, it is copyrighted; thus, archivists have no legal right to copy the Web". However national libraries in some countries[15] have a legal right to copy portions of the web under an extension of a legal deposit.
+
+Some private non-profit web archives that are made publicly accessible like WebCite, the Internet Archive or the Internet Memory Foundation allow content owners to hide or remove archived content that they do not want the public to have access to. Other web archives are only accessible from certain locations or have regulated usage. WebCite cites a recent lawsuit against Google's caching, which Google won.[16]
+
+Laws[edit]
+
+In 2017 the Financial Industry Regulatory Authority, Inc. (FINRA), a United States financial regulatory organization, released a notice stating all the businesses doing digital communications are required to keep a record. This includes website data, social media posts, and messages.[17] Some copyright laws may inhibit Web archiving. For instance, academic archiving by Sci-Hub falls outside the bounds of contemporary copyright law. The site provides enduring access to academic works including those that do not have an open access license and thereby contributes to the archival of scientific research which may otherwise be lost.[18][19]
+
+See also[edit]
+	Internet portal
+Anna's Archive
+Archive site
+Archive Team
+archive.today (formerly archive.is)
+Collective memory
+Common Crawl
+Digital hoarding
+Digital preservation
+Digital library
+Ghost Archive
+Google Cache
+List of Web archiving initiatives
+Memento Project
+Minerva Initiative
+Mirror website
+National Digital Information Infrastructure and Preservation Program (NDIIPP)
+National Digital Library Program (NDLP)
+PADICAT
+PageFreezer
+Pandora Archive
+UK Web Archive
+Virtual artifact
+Wayback Machine
+Web crawling
+WebCite
+Webrecorder
+General bibliography[edit]
+Brown, A. (2006). Archiving Websites: A Practical Guide for Information Management Professionals. London: Facet Publishing. ISBN 978-1-85604-553-7.
+Brügger, N. (2005). Archiving Websites. General Considerations and Strategies. Aarhus: The Centre for Internet Research. ISBN 978-87-990507-0-3. Archived from the original on January 29, 2009.
+Day, M. (2003). "Preserving the Fabric of Our Lives: A Survey of Web Preservation Initiatives" (PDF). Research and Advanced Technology for Digital Libraries. Lecture Notes in Computer Science. Vol. 2769. pp. 461–472. doi:10.1007/978-3-540-45175-4_42. ISBN 978-3-540-40726-3. Archived (PDF) from the original on October 29, 2023. Retrieved November 16, 2023.
+Eysenbach, G. & Trudel, M. (2005). "Going, going, still there: using the WebCite service to permanently archive cited web pages". Journal of Medical Internet Research. 7 (5) e60. doi:10.2196/jmir.7.5.e60. PMC 1550686. PMID 16403724.
+Fitch, Kent (2003). "Web site archiving—an approach to recording every materially different response produced by a website". Ausweb 03. Archived from the original on July 20, 2003. Retrieved September 27, 2006.
+Jacoby, Robert (August 19, 2010). "Archiving a Web Page". seoq.com. Archived from the original on January 3, 2011. Retrieved October 23, 2010.
+Lyman, Peter (2002). "Archiving the World Wide Web". Building a National Strategy for Preservation: Issues in Digital Media Archiving (PDF). Council on Library and Information Resources. pp. 38–51. ISBN 978-1-887334-91-4.
+Masanès, J., ed. (2006). Web Archiving. Berlin: Springer-Verlag. ISBN 978-3-540-23338-1.
+Pennock, Maureen (2013). Web-Archiving. DPC Technology Watch Reports. Great Britain: Digital Preservation Coalition. doi:10.7207/twr13-01. ISSN 2048-7916.
+Toyoda, M.; Kitsuregawa, M. (2012). "The History of Web Archiving". Proceedings of the IEEE. 100 (special centennial issue): 1441–1443. doi:10.1109/JPROC.2012.2189920.
+References[edit]
+^ "Web Archiving". Netpreserve - International Internet Preservation Consortium. August 14, 2024. Archived from the original on July 12, 2024.
+^ Ringel, Sharon; Ribak, Rivka (January 1, 2024). "Platformizing the Past: The Social Media Logic of Archival Digitization". Social Media + Society. 10 (1) 20563051241228596. doi:10.1177/20563051241228596. ISSN 2056-3051.
+^ Truman, Gail (2016). "Web Archiving Environmental Scan". Harvard Library.
+^ 
+Jump up to:
+a b c d e Toyoda, M.; Kitsuregawa, M. (May 2012). "The History of Web Archiving". Proceedings of the IEEE. 100 (Special Centennial Issue): 1441–1443. doi:10.1109/JPROC.2012.2189920. ISSN 0018-9219.
+^ Crockett, Zachary (September 28, 2018). "Inside Wayback Machine, the internet's time capsule". The Hustle. sec. Wayyyy back. Archived from the original on October 2, 2018. Retrieved July 21, 2020.
+^ Costa, Miguel; Gomes, Daniel; Silva, Mário J. (September 2017). "The evolution of web archiving". International Journal on Digital Libraries. 18 (3): 191–205. doi:10.1007/s00799-016-0171-9. S2CID 24303455.
+^ Consalvo, Mia; Ess, Charles, eds. (April 2011). "Web Archiving – Between Past, Present, and Future". The Handbook of Internet Studies (1 ed.). Wiley. pp. 24–42. doi:10.1002/9781444314861. ISBN 978-1-4051-8588-2. Archived from the original on September 10, 2022. Retrieved September 11, 2022.
+^ "IWAW 2010: The 10th Intl Web Archiving Workshop". WikiCFP. Archived from the original on November 12, 2020. Retrieved August 19, 2019.
+^ "IWAW - International Web Archiving Workshops". bibnum.bnf.fr. Archived from the original on November 20, 2012. Retrieved August 19, 2019.
+^ "About the IIPC". IIPC. Retrieved April 17, 2022.
+^ "Internet Memory Foundation: Free Web: Free Download, Borrow and Streaming". archive.org. Internet Archive. Retrieved July 21, 2020.
+^ Regis, Camille (June 4, 2019). "Web Archiving: Think the Web is Permanent? Think Again". History Associates. Archived from the original on July 15, 2019. Retrieved July 14, 2019.
+^ Brown, Adrian (January 10, 2016). Archiving websites: a practical guide for information management professionals. Facet. ISBN 978-1-78330-053-2. OCLC 1064574312.
+^ Lyman (2002)
+^ "Legal Deposit | IIPC". netpreserve.org. Archived from the original on March 16, 2017. Retrieved January 31, 2017.
+^ "WebCite FAQ". Webcitation.org. Retrieved September 20, 2018.
+^ "Social Media and Digital Communications" (PDF). finra.org. FINRA.
+^ Claburn, Thomas (September 10, 2020). "Open access journals are vanishing from the web, Internet Archive stands ready to fill in the gaps". The Register. Archived from the original on October 29, 2021. Retrieved October 22, 2020.
+^ Laakso, Mikael; Matthias, Lisa; Jahn, Najko (2021). "Open is not forever: A study of vanished open access journals". Journal of the Association for Information Science and Technology. 72 (9): 1099–1112. arXiv:2008.11933. doi:10.1002/ASI.24460. S2CID 221340749.
+External links[edit]
+Library resources about
+Web archiving
+Online books
+Resources in your library
+Resources in other libraries
+International Internet Preservation Consortium (IIPC)—International consortium whose mission is to acquire, preserve, and make accessible knowledge and information from the Internet for future generations
+National Library of Australia, Preserving Access to Digital Information (PADI)
+Library of Congress—Web Archiving
+Data Hoarding non-profit organization
+show
+vte
+Digital preservation
+
+
+show
+vte
+Cultural heritage and historic preservation
+
+
+show
+Authority control databases 
+
+
+Categories: Web archivingInternet Archive projectsCollections careInternet properties established in 1996Conservation and restoration of cultural heritageDigital preservationLibrary of CongressMuseology
+This page was last edited on 14 October 2025, at 21:25 (UTC).
+Text is available under the Creative Commons Attribution-ShareAlike 4.0 License; additional terms may apply. By using this site, you agree to the Terms of Use and Privacy Policy. Wikipedia® is a registered trademark of the Wikimedia Foundation, Inc., a non-profit organization.
+Privacy policy
+About Wikipedia
+Disclaimers
+Contact Wikipedia
+Legal & safety contacts
+Code of Conduct
+Developers
+Statistics
+Cookie statement
+Mobile view
