@@ -18,6 +18,8 @@ import subprocess
 import boto3
 from core.settings import get_settings
 
+import json
+
 from fake_useragent import UserAgent
 
 logger = logging.getLogger(__name__)
@@ -82,21 +84,24 @@ class WebParsingProcessor(BaseProcessor):
         ua = UserAgent(browsers=['chrome', 'edge'], os=['macos', 'windows'])
         random_ua = ua.random
 
+        browser_args = [
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-gpu",
+            "--disable-dev-shm-usage",
+            f"--user-agent={random_ua}",
+            "--disable-blink-features=AutomationControlled",
+        ]
+
         command = [
             "npx",
             "single-file-cli",
             url,
             output_path,
             "--browser-args",
-            (
-                f"--no-sandbox "
-                f"--disable-setuid-sandbox "
-                f"--disable-gpu "
-                f"--disable-dev-shm-usage "
-                f"--user-agent={random_ua} "
-                f"--disable-blink-features=AutomationControlled"
-            ),
+            json.dumps(browser_args),
         ]
+
 
 
         logger.info(f"Archiving following url: {url}")
