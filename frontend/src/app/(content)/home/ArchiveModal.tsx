@@ -15,7 +15,7 @@ const ArchiveModal = ({ isOpen, onClose, archiveUrl }: ArchiveModalProps) => {
       <div className="bg-white w-full max-w-6xl h-[90vh] rounded-xl overflow-hidden flex flex-col shadow-2xl relative">
         {/* Header */}
         <div className="p-4 border-b flex justify-between items-center bg-gray-50">
-          <h3 className="font-semibold text-gray-800">Permanent Snapshot</h3>
+          {/* <h3 className="font-semibold text-gray-800">Permanent Snapshot</h3> */}
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-200 rounded-full transition-colors"

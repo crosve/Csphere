@@ -6,6 +6,7 @@ import ArchiveModal from "@/app/(content)/home/ArchiveModal";
 interface BookMarkSettingProps {
   content_id: string;
   url: string;
+  archiveUrlProp?: string;
   folder_bookmark?: boolean;
 }
 
@@ -111,6 +112,7 @@ const FolderPopover = ({
 function BookMarkSettingIcon({
   content_id,
   url,
+  archiveUrlProp = "",
   folder_bookmark = false,
 }: BookMarkSettingProps) {
   const [mainPopoverOpen, setMainPopoverOpen] = useState(false);
@@ -146,21 +148,23 @@ function BookMarkSettingIcon({
 
   const handleView = async (content_id: string) => {
     try {
-      const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/content/${content_id}/archive`;
-      const token = fetchToken();
-      const response = await fetch(API_URL, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      // const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/content/${content_id}/archive`;
+      // const token = fetchToken();
+      // const response = await fetch(API_URL, {
+      //   method: "GET",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //     Authorization: `Bearer ${token}`,
+      //   },
+      // });
 
-      const data = await response.json();
+      // const data = await response.json();
+
+      //Just get it from the bookmarks state
 
       // Assuming backend returns { "url": "..." }
-      if (data.url) {
-        setArchiveUrl(data.url);
+      if (archiveUrlProp !== "") {
+        setArchiveUrl(archiveUrlProp);
         setArchiveModalOpen(true);
         setMainPopoverOpen(false);
       } else {

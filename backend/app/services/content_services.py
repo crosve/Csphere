@@ -25,7 +25,6 @@ import json
 
 from email.utils import quote
 
-import os
 
 from app.exceptions.content_exceptions import EmbeddingManagerNotFound, NoMatchedContent, ContentItemNotFound, NotesNotFound, ContentNotFound
 
@@ -33,6 +32,8 @@ import logging
 
 
 from dateutil.relativedelta import relativedelta
+
+from app.functions.AWS_s3 import extract_s3_key, get_presigned_url
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
@@ -244,7 +245,7 @@ def get_content_service(
                 notes=item.notes,
                 tags=item_user_tags,
                 categories=item_categories,
-                html_url=content.html_content_url if content.html_content_url  else ''
+                html_url=get_presigned_url(content.html_content_url) if content.html_content_url  else ''
         
             )
         )

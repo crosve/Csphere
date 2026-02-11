@@ -18,6 +18,8 @@ import subprocess
 import boto3
 from core.settings import get_settings
 
+from fake_useragent import UserAgent
+
 logger = logging.getLogger(__name__)
 
 
@@ -77,11 +79,15 @@ class WebParsingProcessor(BaseProcessor):
         os.makedirs(output_dir, exist_ok=True)
         output_path = os.path.abspath(os.path.join(output_dir, f"{filename}.html"))
 
+        ua = UserAgent(browsers=['chrome', 'edge'], os=['macos', 'windows'])
+        random_ua = ua.random
+
         command = [
             "npx",
             "single-file-cli",
             url,
             output_path,
+            "--browser-args", f'["--user-agent={random_ua}", "--disable-blink-features=AutomationControlled"]',
         ]
 
         logger.info(f"Archiving following url: {url}")
@@ -105,7 +111,6 @@ class WebParsingProcessor(BaseProcessor):
                 s3_key,
                 ExtraArgs={
                     "ContentType": "text/html",
-                    # "ContentDisposition": "inline" # Optional: forces browser to view, not download
                 }
             )
             # Construct the base S3 URL (you'll use your pre-signed method to view it)

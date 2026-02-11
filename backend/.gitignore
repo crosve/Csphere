@@ -20,3 +20,6 @@ __pycache__/
 app/data_models/__pycache__/** 
 
 /dockerfile
+
+
+/archives/*

@@ -187,6 +187,7 @@ export default function BookmarkCard({ bookmark }: BookmarkCardProps) {
               <BookMarkSettingIcon
                 content_id={bookmark.content_id}
                 url={bookmark.url}
+                archiveUrlProp={bookmark.html_url ? bookmark.html_url : ""}
                 folder_bookmark={false}
               />
             </div>
