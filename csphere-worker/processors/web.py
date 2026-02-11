@@ -87,12 +87,26 @@ class WebParsingProcessor(BaseProcessor):
             "single-file-cli",
             url,
             output_path,
-            "--browser-args", f'["--user-agent={random_ua}", "--disable-blink-features=AutomationControlled"]',
+            "--browser-args",
+            (
+                f"--no-sandbox "
+                f"--disable-setuid-sandbox "
+                f"--disable-gpu "
+                f"--disable-dev-shm-usage "
+                f"--user-agent={random_ua} "
+                f"--disable-blink-features=AutomationControlled"
+            ),
         ]
+
 
         logger.info(f"Archiving following url: {url}")
         try:
             result = subprocess.run(command, capture_output=True, text=True, timeout=120)
+            logger.error(f"SingleFile stdout: {result.stdout}") 
+            logger.error(f"SingleFile stderr: {result.stderr}")
+            logger.error(f"SingleFile return code: {result.returncode}")
+
+
             if result.returncode == 0 and os.path.exists(output_path):
                 return output_path
             logger.error(f"SingleFile Error: {result.stderr}")
