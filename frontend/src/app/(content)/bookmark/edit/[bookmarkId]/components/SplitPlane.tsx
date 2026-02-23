@@ -47,7 +47,10 @@ export function SplitPane({
   }, [dragging]);
 
   return (
-    <div ref={containerRef} className="flex w-screen h-screen overflow-hidden">
+    <div
+      ref={containerRef}
+      className="flex w-full h-full overflow-hidden rounded-sm "
+    >
       <div
         style={{ width: `${leftWidth}%` }}
         className="h-full overflow-hidden relative"

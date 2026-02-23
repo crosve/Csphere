@@ -99,3 +99,7 @@ class BookmarkNode(BaseModel):
 
 class BookmarkImportRequest(BaseModel):
     bookmarks: List[BookmarkNode]
+
+
+class ContentEditNotes(BaseModel):
+    contentJsonString: str

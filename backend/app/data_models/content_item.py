@@ -14,6 +14,7 @@ class ContentItem(Base):
     saved_at = Column(TIMESTAMP(timezone=True), default=func.now())
     notes = Column(String, nullable=True)
     content = relationship("Content", backref="content_items")
+    edit_notes = Column(String, nullable=True)
     read = Column(Boolean, nullable=False, server_default=text('false'))
 
     tags = relationship(

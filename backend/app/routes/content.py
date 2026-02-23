@@ -28,7 +28,7 @@ from app.schemas.content import (
     TabRemover, 
     NoteContentUpdate, 
     UserSavedContentResponse, 
-    BookmarkImportRequest
+    BookmarkImportRequest, ContentEditNotes
 )
 
 # 5. Utilities & Security
@@ -49,7 +49,10 @@ from app.services.content_services import (
     get_recent_saved_content, 
     import_browser_bookmarks_service,
     _enqueue_new_content,
-    get_discover_content_service
+    get_discover_content_service,
+    save_edit_notes_service, 
+    get_edit_notes_service, 
+    get_ai_explnation
 )
 
 # 7. Exceptions
@@ -60,6 +63,8 @@ from app.exceptions.content_exceptions import (
     ContentItemNotFound, 
     ContentNotFound
 )
+
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +140,15 @@ def get_content_from_html(content_id: str, user_id: UUID = Depends(get_current_u
 
         presigned_url = get_presigned_url(str(item.html_content_url))
 
-        return {"url": presigned_url, 'success': True}
+
+        response = requests.get(presigned_url)
+
+        response.raise_for_status()
+
+        html_content = response.text
+
+
+        return {"url": presigned_url, "title" : item.title, "html" : html_content,  'success': True}
 
 
 
@@ -386,4 +399,39 @@ def import_browser_bookmarks(bookmark_data : BookmarkImportRequest, user_id: UUI
 
 
 
+#/content/edit/notes/${bookmarkId}`
 
+
+@router.post("/edit/notes/{content_id}")
+def save_edit_notes(content_id: str, data: ContentEditNotes,  user_id: UUID =Depends(get_current_user_id), db: Session = Depends(get_db)):
+    try:
+
+        return save_edit_notes_service(user_id=user_id, content_id=content_id, content_json_str=data.contentJsonString, db=db)
+    
+    except Exception as e:
+        logging.error(f"Failed to save the contents edit data: {e}")
+        return {'success': False}
+    
+
+
+@router.get("/edit/notes/{content_id}")
+def get_edit_notes(content_id: str, user_id: UUID=Depends(get_current_user_id), db: Session = Depends(get_db)):
+    try:
+        return get_edit_notes_service(user_id=user_id, content_id=content_id, db=db)
+
+
+    except Exception as e:
+        logging.error(f'Failef to get the edit notes: {e}')
+        return {'success' : False, 'message' : 'Server error fetching the edit notes'}
+
+
+
+
+
+@router.get("/ai/{queryText}")
+def get_ai_explanation(queryText : str,user_id: UUID=Depends(get_current_user_id)):
+    try:
+        return get_ai_explnation(query_text=queryText)
+
+    except Exception as e:
+        logging.error(f"Failed to get ai explanation: {e}")

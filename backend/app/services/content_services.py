@@ -669,3 +669,60 @@ def get_discover_content_service(user_id: str, db: Session):
         
 
     return discovered_content
+
+
+def save_edit_notes_service(user_id: str, content_id: str, content_json_str: str, db : Session):
+
+    content_item : ContentItem = db.query(ContentItem).filter(ContentItem.user_id == user_id , ContentItem.content_id == content_id).first()
+
+
+    if not content_item:
+        logging.error("Content item does not exist. ")
+        return 
+    
+
+    content_item.edit_notes = content_json_str
+
+
+    db.commit()
+
+    return {'success' : True}
+
+
+def get_edit_notes_service(user_id: str,  content_id: str, db: Session):
+    content_item : ContentItem = db.query(ContentItem).filter(ContentItem.user_id == user_id, ContentItem.content_id == content_id).first()
+
+
+    if not content_item:
+        logging.error("Content item does not exist")
+        #raise an error later
+        return 
+
+    print("Content item: ", content_item.edit_notes)
+    
+
+    return {'success' : True, 'editContent' : content_item.edit_notes}
+
+
+
+
+
+
+from app.ai.base import OpenRouterBase
+
+
+
+def get_ai_explnation(query_text: str):
+
+    openRouter :OpenRouterBase = OpenRouterBase(system_prompt="You are a professor during office hours. Your task" \
+    "is to answer any confusion the user may have on the content")
+
+
+    answer = openRouter.get_response(f"I don't understand this content here: {query_text}. Could you explain it more in detail")
+
+    return {'success': True, 'response': answer}
+
+
+
+
+    

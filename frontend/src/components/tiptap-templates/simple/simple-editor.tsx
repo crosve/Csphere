@@ -1,7 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
-import { EditorContent, EditorContext, useEditor } from "@tiptap/react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
+import { EditorContent, EditorContext, first, useEditor } from "@tiptap/react";
 
 // --- Tiptap Core Extensions ---
 import { StarterKit } from "@tiptap/starter-kit";
@@ -72,8 +79,6 @@ import { handleImageUpload, MAX_FILE_SIZE } from "@/lib/tiptap-utils";
 
 // --- Styles ---
 import "@/components/tiptap-templates/simple/simple-editor.scss";
-
-import content from "@/components/tiptap-templates/simple/data/content.json";
 
 const MainToolbarContent = ({
   onHighlighterClick,
@@ -183,13 +188,17 @@ const MobileToolbarContent = ({
   </>
 );
 
-export function SimpleEditor({
-  onSave,
-  editContent,
-}: {
-  onSave?: (content: string) => void;
-  editContent?: string;
-}) {
+export interface SimpleEditorRef {
+  insertQuote: (text: string) => void;
+}
+
+export const SimpleEditor = forwardRef<
+  SimpleEditorRef,
+  {
+    onSave?: (content: string) => void;
+    editContent?: string;
+  }
+>(({ onSave, editContent }, ref) => {
   const isMobile = useIsBreakpoint();
   const { height } = useWindowSize();
   const [mobileView, setMobileView] = useState<"main" | "highlighter" | "link">(
@@ -200,9 +209,11 @@ export function SimpleEditor({
   const isTyping = useRef<boolean>(false);
   const typingTimeout = useRef<ReturnType<typeof setTimeout>>(null);
 
+  const firstRender = useRef<boolean>(true);
+
   const editor = useEditor({
     immediatelyRender: false,
-    content: editContent ?? content,
+    content: editContent,
     editorProps: {
       attributes: {
         autocomplete: "off",
@@ -214,6 +225,13 @@ export function SimpleEditor({
     },
     //Save content after two seconds of typing
     onUpdate: () => {
+      //Make sure it's not the first render
+      if (firstRender.current === true) {
+        firstRender.current = false;
+        return;
+      }
+
+      //Might not need isTyping - figure out later
       isTyping.current = true;
 
       if (typingTimeout.current) {
@@ -257,32 +275,26 @@ export function SimpleEditor({
     ],
   });
 
+  useImperativeHandle(ref, () => ({
+    insertQuote: (text: string) => {
+      editor
+        ?.chain()
+        .focus()
+        .insertContent(
+          `
+        <blockquote>${text}</blockquote>
+      `,
+        )
+        .run();
+    },
+  }));
+
   useEffect(() => {
     if (editor && editContent) {
       const parsed = JSON.parse(editContent);
       editor.commands.setContent(parsed);
     }
   }, [editor, editContent]);
-
-  // const handleSave = useCallback(() => {
-  //   if (!editor) return;
-  //   const jsonData = JSON.stringify(editor.getJSON());
-
-  //   onSave?.(jsonData);
-  // }, [editor, onSave]);
-
-  //Use a setTimout instead
-
-  // useEffect(() => {
-  //   const handleKeyDown = (e: KeyboardEvent) => {
-  //     if ((e.ctrlKey || e.metaKey) && e.key === "s") {
-  //       e.preventDefault();
-  //       handleSave();
-  //     }
-  //   };
-  //   window.addEventListener("keydown", handleKeyDown);
-  //   return () => window.removeEventListener("keydown", handleKeyDown);
-  // }, [handleSave]);
 
   const rect = useCursorVisibility({
     editor,
@@ -330,4 +342,6 @@ export function SimpleEditor({
       </EditorContext.Provider>
     </div>
   );
-}
+});
+
+SimpleEditor.displayName = "SimpleEditor";
