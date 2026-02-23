@@ -1,8 +1,10 @@
-import React, { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { fetchToken } from "@/functions/user/UserData";
 import { toast } from "sonner";
 import ShareModal from "./ShareModal";
 import ArchiveModal from "@/app/(content)/home/ArchiveModal";
+import { useRouter } from "next/navigation";
+
 interface BookMarkSettingProps {
   content_id: string;
   url: string;
@@ -120,6 +122,8 @@ function BookMarkSettingIcon({
 
   const [archiveModalOpen, setArchiveModalOpen] = useState(false);
   const [archiveUrl, setArchiveUrl] = useState("");
+
+  const router = useRouter();
   const handleAddToFolder = async (folder: FolderProps) => {
     try {
       const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/folder/add`;
@@ -244,6 +248,9 @@ function BookMarkSettingIcon({
           onClose={() => {
             setArchiveModalOpen(false);
             setArchiveUrl(""); // Clear URL on close
+          }}
+          onEdit={() => {
+            router.push(`/bookmark/edit/${content_id}`);
           }}
           archiveUrl={archiveUrl}
         />

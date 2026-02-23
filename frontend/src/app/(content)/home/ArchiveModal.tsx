@@ -1,12 +1,22 @@
 import { useState } from "react";
+
+import { SimpleEditor } from "@/components/tiptap-templates/simple/simple-editor";
+
 interface ArchiveModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onEdit?: () => void;
   archiveUrl: string;
 }
 
-const ArchiveModal = ({ isOpen, onClose, archiveUrl }: ArchiveModalProps) => {
+const ArchiveModal = ({
+  isOpen,
+  onClose,
+  onEdit,
+  archiveUrl,
+}: ArchiveModalProps) => {
   const [isIframeLoading, setIsIframeLoading] = useState(true);
+  const [displayEditor, setDisplayEditor] = useState<boolean>(false);
 
   if (!isOpen) return null;
 
@@ -21,6 +31,12 @@ const ArchiveModal = ({ isOpen, onClose, archiveUrl }: ArchiveModalProps) => {
             className="p-2 hover:bg-gray-200 rounded-full transition-colors"
           >
             ✕
+          </button>
+          <button
+            onClick={onEdit}
+            className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+          >
+            Edit
           </button>
         </div>
 
@@ -46,6 +62,7 @@ const ArchiveModal = ({ isOpen, onClose, archiveUrl }: ArchiveModalProps) => {
             onLoad={() => setIsIframeLoading(false)}
           />
         </div>
+        {displayEditor && <SimpleEditor />}
       </div>
     </div>
   );
