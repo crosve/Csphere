@@ -166,6 +166,11 @@ function page({ params }: { params: Promise<{ bookmarkId: string }> }) {
   return (
     <div className="w-full h-full p-4 bg-gray-300 space-y-4">
       <EditHeader editorRef={editorRef} pageTitle={pageTitle} />
+      {/* <script
+        async
+        src="https://cse.google.com/cse.js?cx=b56d8ea42869a40ba"
+      ></script>
+      <div className="gcse-search"></div> */}
 
       {isAiModelOpen === true && (
         <ExplanationPopup

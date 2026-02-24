@@ -9,6 +9,7 @@ import {
   useImperativeHandle,
 } from "react";
 import { EditorContent, EditorContext, first, useEditor } from "@tiptap/react";
+import html2canvas from "html2canvas";
 
 // --- Tiptap Core Extensions ---
 import { StarterKit } from "@tiptap/starter-kit";
@@ -191,6 +192,7 @@ const MobileToolbarContent = ({
 export interface SimpleEditorRef {
   insertQuote: (text: string) => void;
   downloadNotes: (title: string) => void;
+  downloadPDF: (title: string) => Promise<void>;
 }
 
 export const SimpleEditor = forwardRef<
@@ -302,6 +304,37 @@ export const SimpleEditor = forwardRef<
       a.download = `${title}.txt`;
       a.click();
       URL.revokeObjectURL(url);
+    },
+    downloadPDF: async (title: string = "notes") => {
+      if (!editor) return;
+
+      // Create a temporary div with the editor's HTML content
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = editor.getHTML();
+      tempDiv.style.padding = "40px";
+      tempDiv.style.fontFamily = "Arial, sans-serif";
+      tempDiv.style.width = "800px";
+      tempDiv.style.position = "absolute";
+      tempDiv.style.left = "-9999px";
+      document.body.appendChild(tempDiv);
+
+      const canvas = await html2canvas(tempDiv);
+      const imgData = canvas.toDataURL("image/png");
+
+      const { jsPDF } = await import("jspdf");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "px",
+        format: "a4",
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`${title}.pdf`);
+
+      document.body.removeChild(tempDiv);
     },
   }));
 

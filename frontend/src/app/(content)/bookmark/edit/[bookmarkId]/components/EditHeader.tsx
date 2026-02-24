@@ -1,8 +1,10 @@
-import React from "react";
+import { useCallback, useState } from "react";
 import { BsArrowsFullscreen } from "react-icons/bs";
+import { HiDownload } from "react-icons/hi";
 import { IconType } from "react-icons";
-
 import { SimpleEditorRef } from "@/components/tiptap-templates/simple/simple-editor";
+import { DownloadOptions } from "./DownloadOptions";
+import { useRouter } from "next/navigation";
 
 interface TopButtonsType {
   title: string;
@@ -16,37 +18,67 @@ interface EditHeaderProps {
 }
 
 function EditHeader({ editorRef, pageTitle }: EditHeaderProps) {
+  const [showDownloadOptions, setShowDownloadOptions] =
+    useState<boolean>(false);
+
+  const router = useRouter();
+
   const topButtons: TopButtonsType[] = [
     {
-      title: "full screen",
+      title: "Fullscreen",
       function: () => {
         const splitContainer = document.getElementById("split-container");
-        if (splitContainer.requestFullscreen) {
-          console.log("going full screen");
+        if (splitContainer?.requestFullscreen) {
           splitContainer.requestFullscreen();
         }
       },
       icon: BsArrowsFullscreen,
     },
     {
-      title: "Download Notes",
-      function: () => {
-        editorRef.current?.downloadNotes(pageTitle);
-      },
+      title: "Download",
+      function: () => setShowDownloadOptions(true),
+      icon: HiDownload,
     },
   ];
+
+  const handleBackNavigation = () => {
+    router.back();
+  };
+
   return (
-    <div className="w-full rounded-2xl bg-gray-100 h-16 flex  flex-row-reverse items-center gap-4 justify-start p-4">
-      {topButtons.map((button) => (
+    <>
+      <div className="w-full bg-white border-b border-gray-100 h-12 flex items-center gap-2 px-3">
         <button
-          key={button.title}
-          onClick={() => button.function()}
-          className="w-auto h-auto text-center py-2 px-4 hover:bg-gray-100 rounded-2xl bg-gray-200"
+          onClick={(e) => {
+            e.stopPropagation();
+
+            handleBackNavigation();
+          }}
+          className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all duration-150 px-3 py-1.5 rounded-lg mr-auto"
         >
-          {button.icon ? <button.icon /> : <>{button.title}</>}
+          Back
         </button>
-      ))}
-    </div>
+        {topButtons.map((button) => (
+          <button
+            key={button.title}
+            onClick={button.function}
+            title={button.title}
+            className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all duration-150 px-3 py-1.5 rounded-lg"
+          >
+            {button.icon && <button.icon className="w-3.5 h-3.5" />}
+            <span>{button.title}</span>
+          </button>
+        ))}
+      </div>
+
+      {showDownloadOptions && (
+        <DownloadOptions
+          editorRef={editorRef}
+          pageTitle={pageTitle}
+          setShowDownloadOptions={setShowDownloadOptions}
+        />
+      )}
+    </>
   );
 }
 
