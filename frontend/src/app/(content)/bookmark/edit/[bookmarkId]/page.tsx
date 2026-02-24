@@ -8,6 +8,7 @@ import { SplitPane } from "./components/SplitPlane";
 import { SimpleEditorRef } from "@/components/tiptap-templates/simple/simple-editor";
 
 import { ExplanationPopup } from "./components/ExplanationPopup";
+import EditHeader from "./components/EditHeader";
 
 function page({ params }: { params: Promise<{ bookmarkId: string }> }) {
   const [isIframeLoading, setIsIframeLoading] = useState<boolean>(true);
@@ -163,7 +164,9 @@ function page({ params }: { params: Promise<{ bookmarkId: string }> }) {
   };
 
   return (
-    <div className="w-full h-full p-4 bg-gray-300">
+    <div className="w-full h-full p-4 bg-gray-300 space-y-4">
+      <EditHeader editorRef={editorRef} pageTitle={pageTitle} />
+
       {isAiModelOpen === true && (
         <ExplanationPopup
           editorRef={editorRef}

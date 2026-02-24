@@ -190,6 +190,7 @@ const MobileToolbarContent = ({
 
 export interface SimpleEditorRef {
   insertQuote: (text: string) => void;
+  downloadNotes: (title: string) => void;
 }
 
 export const SimpleEditor = forwardRef<
@@ -286,6 +287,21 @@ export const SimpleEditor = forwardRef<
       `,
         )
         .run();
+    },
+    downloadNotes: (title: string = "notes") => {
+      if (!editor) return;
+
+      console.log("Title: ", title);
+
+      const text = editor.getText();
+
+      const blob = new Blob([text], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${title}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
     },
   }));
 

@@ -10,7 +10,7 @@ interface ExplanationPopupProps {
   explanation: string;
   isExplaining: boolean;
   onClose: () => void;
-  editorRef: React.RefObject<SimpleEditorRef>; // add this
+  editorRef: React.RefObject<SimpleEditorRef>;
 }
 
 //({ onSave, editContent }, ref)

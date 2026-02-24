@@ -50,6 +50,7 @@ export function SplitPane({
     <div
       ref={containerRef}
       className="flex w-full h-full overflow-hidden rounded-sm "
+      id="split-container"
     >
       <div
         style={{ width: `${leftWidth}%` }}
