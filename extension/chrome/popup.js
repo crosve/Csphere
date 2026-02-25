@@ -104,6 +104,7 @@ function renderMainView() {
         <!-- Tab Pannel -->
         <div class="tab-panel ${activeTab === "bookmark" ? "active" : ""}" id="bookmark-panel">
           <div class="scroll-area">
+          <label class="section-label">Name</label>
             <div class="notes-container">
               <textarea id="notesTextarea" class="notes-textarea" placeholder="Add any notes here..." maxlength="280"></textarea>
               <div class="character-counter"><span id="charCount">0</span>/280</div>
