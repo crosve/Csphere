@@ -15,7 +15,4 @@ cat_url = (
 # Send GET request
 response = requests.get(cat_url,  verify=False)
 
-# Show results
-print("Status code:", response.status_code)
-print("Categories returned:")
-print(response.text)
+
