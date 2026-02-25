@@ -149,7 +149,7 @@ class ContentEmbeddingManager:
             # Let the caller manage transaction rollback
             raise
         except Exception as e:
-            print(f"[ContentEmbeddingManager] failed to process content: {e}")
+            logger.error(f"[ContentEmbeddingManager] failed to process content: {e}")
             return None
         
 

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Csphere",
-  "version": "1.0",
+  "version": "1.2",
   "description": "Easily save, organize, enrich, and semantically search over your tabs.",
   "permissions": [
     "tabs",
@@ -24,8 +24,6 @@
   },
   "homepage_url": "https://csphere.io",
   "host_permissions": [
-    "http://127.0.0.1:8000/*",
-    "http://localhost:8000/*",
     "https://csphere.feeltiptop.com/*"
   ]
 }

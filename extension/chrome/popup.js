@@ -79,11 +79,23 @@ async function apiRequest(endpoint, method = "GET", body = null) {
   return response.json();
 }
 
+const policy = window.trustedTypes
+  ? window.trustedTypes.createPolicy("Csphere", {
+      createHTML: (input) => (window.DOMPurify ? window.DOMPurify.sanitize(input) : input),
+    })
+  : {
+      createHTML: (input) => (window.DOMPurify ? window.DOMPurify.sanitize(input) : input),
+    };
+
+function setHTML(element, html) {
+  element.innerHTML = policy.createHTML(html);
+}
+
 /** * ==========================================
  * UI RENDERING (MAIN INTERFACE)
  * ========================================== */
 function renderMainView() {
-  appContainer.innerHTML = `
+  const html = `
     <div class="extension-popup">
       <header class="popup-header">
         <div class="header-left">
@@ -165,6 +177,7 @@ function renderMainView() {
     </div>
   `;
 
+  setHTML(appContainer, html);
   attachEventListeners();
   loadContextualData();
 }
@@ -235,16 +248,18 @@ async function fetchUserTags() {
 
     // 1. Reset and populate the dropdown
     // We keep the first disabled option as a placeholder
-    dropdown.innerHTML = `
-      <option value="" disabled selected>Choose a tag...</option>
-      ${userTags
-        .map(
-          (tag) => `
+    const optionsHTML = userTags
+      .map(
+        (tag) => `
         <option value="${tag.tag_id}">${tag.tag_name}</option>
       `,
-        )
-        .join("")}
+      )
+      .join("");
+    const html = `
+      <option value="" disabled selected>Choose a tag...</option>
+      ${optionsHTML}
     `;
+    setHTML(dropdown, html);
 
     dropdown.onchange = (e) => {
       const selectedId = e.target.value;
@@ -273,11 +288,11 @@ function renderPills() {
   if (!pillsContainer) return;
 
   if (selectedTags.length === 0) {
-    pillsContainer.innerHTML = `<span class="placeholder-text">No tags selected</span>`;
+    setHTML(pillsContainer, `<span class="placeholder-text">No tags selected</span>`);
     return;
   }
 
-  pillsContainer.innerHTML = selectedTags
+  const html = selectedTags
     .map(
       (tag) => `
     <div class="tag-pill">
@@ -287,6 +302,7 @@ function renderPills() {
   `,
     )
     .join("");
+  setHTML(pillsContainer, html);
 
   // Attach removal logic
   pillsContainer.querySelectorAll(".remove-pill").forEach((btn) => {
@@ -340,7 +356,7 @@ async function fetchFolders() {
     // Update dropdown if we are on the bookmark tab
     const dropdown = document.getElementById("folderDropdown");
     if (dropdown) {
-      dropdown.innerHTML = `<option value="default">Choose a folder...</option>`;
+      setHTML(dropdown, `<option value="default">Choose a folder...</option>`);
       cachedFolders.forEach((f) => {
         const opt = document.createElement("option");
         opt.value = f.folderId;
@@ -369,12 +385,12 @@ function renderFoldersList() {
   }
 
   if (cachedFolders.length === 0) {
-    container.innerHTML = `<div class="empty-state"><p>No folders found.</p></div>`;
+    setHTML(container, `<div class="empty-state"><p>No folders found.</p></div>`);
     return;
   }
 
   // Modern Grid UI
-  container.innerHTML = `
+  const html = `
     <div class="folders-grid">
       ${cachedFolders
         .map(
@@ -396,6 +412,7 @@ function renderFoldersList() {
         .join("")}
     </div>
   `;
+  setHTML(container, html);
 
   // Attach click listeners to cards
   container.querySelectorAll(".folder-card").forEach((card) => {
@@ -416,7 +433,7 @@ async function renderFolderDetailView(container) {
   await fetchFolderBookmarks();
 
   if (selectedViewFolderBookmarks === null) {
-    container.innerHTML = `
+    const html = `
     <div class="folder-detail-view">
           <div class="folder-detail-header">
         <button id="backToFolders" class="back-btn">← Back</button>
@@ -425,10 +442,11 @@ async function renderFolderDetailView(container) {
         <h1>No bookmarks found for this folder</h1>
     </div>
   `;
+    setHTML(container, html);
     return;
   }
 
-  container.innerHTML = `
+  const html = `
 
   <div>
 
@@ -462,6 +480,7 @@ async function renderFolderDetailView(container) {
   </div> 
   
   `;
+  setHTML(container, html);
 
   document.getElementById("backToFolders").addEventListener("click", () => {
     selectedViewFolder = null;
@@ -479,12 +498,12 @@ async function renderRecentBookmarks() {
       recentBookmarksList = await apiRequest("/content/recent", "POST");
       //if it's still equal to 0
       if (recentBookmarksList.length === 0) {
-        container.innerHTML = `<div class="empty-state"><p>No recent bookmarks</p></div>`;
+        setHTML(container, `<div class="empty-state"><p>No recent bookmarks</p></div>`);
         return;
       }
     }
 
-    container.innerHTML = recentBookmarksList
+    const html = recentBookmarksList
       .map(
         (b) => `
       <div class="bookmark-card">
@@ -501,8 +520,9 @@ async function renderRecentBookmarks() {
     `,
       )
       .join("");
+    setHTML(container, html);
   } catch (err) {
-    container.innerHTML = `<p class="error">Failed to load bookmarks.</p>`;
+    setHTML(container, `<p class="error">Failed to load bookmarks.</p>`);
   }
 }
 
@@ -554,13 +574,14 @@ function handleAddTag() {
 function renderTags() {
   const container = document.getElementById("tagsContainer");
   if (!container) return;
-  container.innerHTML = activeTags
+  const html = activeTags
     .map(
       (t) => `
     <span class="tag">${t}<button class="tag-remove" data-tag="${t}">×</button></span>
   `,
     )
     .join("");
+  setHTML(container, html);
 
   container.querySelectorAll(".tag-remove").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -605,7 +626,7 @@ async function extractHTMLFromPage() {
 }
 
 function renderLoginView() {
-  app.innerHTML = `
+  const html = `
     <header class="login_header">
       <a href = "https://csphere.io/"  target="_blank"> 
         <img class="logo" src="images/Csphere-icon-128.png" />
@@ -626,6 +647,7 @@ function renderLoginView() {
       <p class="message-p"></p>
     </div>
   `;
+  setHTML(appContainer, html);
 
   document.getElementById("loginForm").addEventListener("submit", async (e) => {
     e.preventDefault();
