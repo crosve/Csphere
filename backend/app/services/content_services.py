@@ -4,6 +4,8 @@ from app.data_models.content_item import ContentItem
 from app.data_models.content_ai import ContentAI
 from app.data_models.folder_item import folder_item
 from app.data_models.folder import Folder
+from app.data_models.category import Category
+from app.data_models.content_category import ContentCategory
 from app.schemas.content import ContentWithSummary, UserSavedContent, TabRemover, NoteContentUpdate, CategoryOut, BookmarkImportRequest
 from app.preprocessing.query_preprocessor import QueryPreprocessor
 from app.deps.services import get_embedding_manager
@@ -197,6 +199,14 @@ def get_content_service(
         .filter(ContentItem.user_id == user_id)
     )
 
+    if filter_category_names:
+        query = (
+            query
+            .join(ContentCategory, ContentCategory.c.content_id == Content.content_id)
+            .join(Category, Category.category_id == ContentCategory.c.category_id)
+            .filter(Category.category_name.in_(filter_category_names))
+        )
+
     if cursor_dt:
         query = query.filter(ContentItem.saved_at < cursor_dt)
 
@@ -208,16 +218,12 @@ def get_content_service(
     bookmarks = []
     global_categories_seen = {} 
 
-    filter_set = set(filter_category_names) if filter_category_names else None
 
     for item, content, ai_summary in paged_results:
         item_categories = [CategoryOut.from_orm(cat) for cat in content.categories]
         item_user_tags = [TagOut.from_orm(t) for t in item.tags]
 
-        if filter_set:
-            category_names = {cat.category_name for cat in item_categories}
-            if not category_names.intersection(filter_set):
-                continue  
+         
 
         for cat in item_categories:
             global_categories_seen[cat.category_id] = cat
@@ -288,6 +294,14 @@ def get_unread_content_service(
         .filter(ContentItem.user_id == user_id, ContentItem.read == False)
     )
 
+    if filter_category_names:
+        query = (
+            query
+            .join(ContentCategory, ContentCategory.c.content_id == Content.content_id)
+            .join(Category, Category.category_id == ContentCategory.c.category_id)
+            .filter(Category.category_name.in_(filter_category_names))
+        )
+
     if cursor_dt:
         query = query.filter(ContentItem.saved_at < cursor_dt)
 
@@ -299,16 +313,12 @@ def get_unread_content_service(
     bookmarks = []
     global_categories_seen = {} 
 
-    filter_set = set(filter_category_names) if filter_category_names else None
 
     for item, content, ai_summary in paged_results:
         item_categories = [CategoryOut.from_orm(cat) for cat in content.categories]
         item_user_tags = [TagOut.from_orm(t) for t in item.tags]
 
-        if filter_set:
-            category_names = {cat.category_name for cat in item_categories}
-            if not category_names.intersection(filter_set):
-                continue  
+         
 
         for cat in item_categories:
             global_categories_seen[cat.category_id] = cat

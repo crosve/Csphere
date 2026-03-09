@@ -34,7 +34,7 @@ const CategoryButton: React.FC<CategoryButtonProps> = ({
   choosenCategories,
   setChoosenCategories,
 }) => {
-  const [selected, setSelected] = useState(false);
+  const isSelected = choosenCategories.includes(category_name);
 
   const handleAppend = () => {
     const exists = choosenCategories.includes(category_name);
@@ -48,14 +48,13 @@ const CategoryButton: React.FC<CategoryButtonProps> = ({
         })
       );
     }
-    setSelected((prev) => !prev);
   };
 
   return (
     <button
       onClick={handleAppend}
       className={`px-3 py-1 rounded-full border-[0.5px] border-black text-sm text-black hover:bg-[#202A29] hover:text-white transition-colors
-      ${selected ? "bg-[#202A29] text-white" : ""}`}
+      ${isSelected ? "bg-[#202A29] text-white" : ""}`}
     >
       {category_name}
     </button>
