@@ -55,6 +55,7 @@ body {
   overflow: hidden;
 }
 
+
  #app.app--main .extension-popup {
   height: 525px;
  }
@@ -83,19 +84,19 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: linear-gradient(135deg, #d16f6f, #cc6d68);
+  background: linear-gradient(135deg, #bd4d4d, #a53630);
   color: white;
   border: none;
   padding: 6px 12px;
   border-radius: 6px;
   cursor: pointer;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 12px;
   transition: all 0.3s ease;
 }
 
 .logout-btn:hover {
-  background: linear-gradient(135deg, #d49e9e, #ee5a52);
+  background: linear-gradient(135deg, #da7d7d, #ee5a52);
 }
 
 /* Tab Navigation */
@@ -124,6 +125,10 @@ body {
   color: var(--primary);
   background-color: var(--primary-transparent);
   border-bottom: 2px solid var(--primary);
+}
+
+.tab-btn:hover{
+  background-color: rgba(0, 0, 0, 0.1);
 }
 
 .tab-icon {
@@ -166,6 +171,10 @@ body {
   border: 1px solid #e0e0e0;
   padding: 4px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.notes-container:hover{
+  border-color: grey;
 }
 
 .status-message {
